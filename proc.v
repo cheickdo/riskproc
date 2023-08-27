@@ -95,9 +95,31 @@ module control(DIN, resetn, clock, run, DOUT, ADDR, W);
 endmodule
 
 //governs ALU
-module datapath(BusWires, cout, Sum);
+module datapath(BusWires, AddSub, Cout, Sum);
+    
     wire [31:0] BusWires;
+    wire [31:0] Sum;
+    wire [31:0] Cout;
 
+    //control signals
+    wire AddSub;
+
+    //ALU
     always @(*) begin
+        if (AddSub) {Cout, Sum} = A + ~BusWires + 16'b1;
+        else {Cout, Sum} = A + BusWires;
     end
+endmodule
+
+//32-bit register
+module regn #(parameter n = 32) (D, Resetn, E, Clock, Q);
+    input wire [n-1:0] D;
+    input wire Resetn;
+    input wire E;
+    input wire Clock;
+    output reg [n-1:0] Q;
+    
+    always @(posedge Clock)
+        if (!Resetn) Q <= 0;
+        else if (E) Q <= D;
 endmodule

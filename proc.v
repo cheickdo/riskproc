@@ -1,9 +1,6 @@
-//32-bit RISC-V standalone processor
+//32-bit RISC-V standalone processor modules
 
-module proc();
-endmodule
-
-module control(DIN, resetn, clock, run, DOUT, ADDR, W);
+module control(DIN, resetn, clock, run, DOUT, ADDR, W, Run);
 	input [31:0] DIN;
     input resetn, clock, run;
     output wire [31:0] DOUT;
@@ -11,12 +8,26 @@ module control(DIN, resetn, clock, run, DOUT, ADDR, W);
     output wire W;
 
 	wire [31:0] IR;
+    reg Done;
+    reg [2:0] Tstep, Tstep_next;
 
     //fields
     wire [6:0] r_funct7, opcode;
     wire [4:0] r_rs1, r_rs2, r_rd, i_rs1, i_rd;
     wire [2:0] i_funct3, r_funct3;
     wire [11:0] immediate;
+
+    wire [6:0] r_sign,ld_sign,sd_sign,beq_sign;
+
+    //control signals depending on instruction type
+    /*
+        In the form {ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, ALUOp1, ALUOp0}
+    */
+    assign r_sign = 7'b00100010;
+    assign ld_sign = 7'11110000;
+    assign r_sign = 7'1x001000;
+    assign r_sign = 7'0x000101;
+
 
     //instruction format encodings 
     assign opcode = IR[6:0];
@@ -89,17 +100,48 @@ module control(DIN, resetn, clock, run, DOUT, ADDR, W);
     register x4 is thread pointer(tp)
     register x8 frame pointer
     */
-	/* OPCODE instructions found within the excel
 
-    */
+    //FSM controlling instruction clock cycles
+    always @(*)
+        case (Tstep)
+        T0: begin  // instruction fetch
+            if (~Run) Tstep_next = T0;
+            else Tstep_next = T1;
+        end
+        T1: begin  // wait cycle for synchronous memory
+            Tstep_next = T2;
+        end
+        T2: begin  // this time step stores the instruction word in IR
+            Tstep_next = T3;
+        end
+        T3: begin
+            if (Done) Tstep_next = T0;
+            else Tstep_next = T4;
+        end
+        T4: begin
+            if (Done) Tstep_next = T0;
+            else Tstep_next = T5;
+        end
+        T5: begin  // instructions end after this time step
+            Tstep_next = T0;
+        end
+        default: Tstep_next = 3'bxxx;
+        endcase
 endmodule
 
 //governs ALU
-module datapath(BusWires, AddSub, Cout, Sum);
+module datapath(BusWires, AddSub, Cout, Sum, PC, reg1, reg2, Zero);
     
     wire [31:0] BusWires;
     wire [31:0] Sum;
     wire [31:0] Cout;
+
+    //controls branch control logic
+    output Zero;
+
+    //assign to Imm Gen(sign extended) << 1 added to PC
+    wire [31:0] bTarget; 
+
 
     //control signals
     wire AddSub;

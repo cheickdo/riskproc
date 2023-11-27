@@ -1,260 +1,718 @@
-//32-bit RISC-V standalone processor modules
-
-module control(
-	input wire[31:0] DIN,
-    input wire resetn,
-    input wire clock,
-    input wire run,
-    output wire [31:0] BusWires,
+module proc (
+    input wire [31:0] DIN,
+    input wire Resetn,
+    input wire Clock,
+    input wire Run,
     output wire [31:0] DOUT,
     output wire [31:0] ADDR,
-    output wire [2:0] T_D,
     output wire W
 );
 
-    //FSM state & IR
-	wire [31:0] IR;
-    reg Done;
-    reg [2:0] T_D, T_Q;
+  wire [0:31] R_in;  // r0, ..., r7 register enables
+  reg rs1_in, rs2_in, rd_in, IR_in, ADDR_in, Done, DOUT_in, G_in, F_in, AddSub, Arith;
+  reg [2:0] Tstep_Q, Tstep_D;
+  reg [31:0] BusWires1, BusWires2, PCSrc;
+  reg [5:0] Select1, Select2;  // BusWires selector
+  reg [31:0] Sum;
+  reg ALU_Cout;  // ALU carry-out
+  wire [2:0] funct3;
+  wire [7:0] opcode, funct7;
+  wire [4:0] rs1, rd, rs2;  // instruction opcode and register operands
+  reg [11:0] I_Imm;
+  wire [31:0] r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11,
+    r12, r13, r14, r15, r16, r17, r18, r19, r20, r21, r22, r23, r24, r25, r26, r27, r28
+    , r29, r30, r31, pc, A;
+  wire [31:0] G;
+  wire [31:0] IR;
+  reg pc_incr;  // used to increment the pc
+  reg sp_incr, sp_decr;
+  reg pc_in; 
+  reg  W_D;  // used for write signal
+  reg Imm;
+  wire C, N, Z;
 
-    //control signals
-    reg rX_in, IR_in, ADDR_in, Done, DOUT_in, A_in, G_in, F_in, AddSub, ALU_and, ALU_shift;
-    reg [4:0] sel; 
-    reg pc_incr;  // used to increment the pc
-    reg sp_incr, sp_decr;
-    reg sp_in, lr_in, pc_in;  // used to load the sp, lr, pc
-    reg  W_D;  // used for write signal
+  assign opcode = IR[6:0];
+  assign rd = IR[11:7];
+  assign funct3 = IR[14:12];
+  assign rs1  = IR[19:15];
+  assign rs2 = IR[24:20];
+  assign funct7 = IR[31:25];
+  assign I_Imm = IR[31:20];
 
-    //fields
-    wire [6:0] r_funct7, opcode;
-    wire [4:0] r_rs1, r_rs2, r_rd, i_rs1, i_rd;
-    wire [2:0] i_funct3, r_funct3;
-    wire [11:0] immediate;
+  dec3to8 decX (
+      .En(rd_in),
+      .W (rd),
+      .Y (R_in)
+  );  // produce r0 - r7 register enables
 
-    wire [6:0] r_sign,ld_sign,sd_sign,beq_sign;
+  parameter fetch = 3'b000,mem_wait = 3'b001, decode = 3'b010,  exec = 3'b011, access = 3'b100, write_back = 3'b101;
 
-    //bus multiplexor
-    parameter r0 = 5'b00000, r1 = 5'b00001, r2 = 5'b00010, r3 = 5'b00011, r4 = 5'b00100, r5 = 5'b00101,
-        r6 = 5'b00110, r7 = 5'b00111, r8 = 5'b01000, r9 = 5'b01001, r10 = 5'b01010, r11 = 5'b01011,
-        r12 = 5'b01100 , r13 = 5'b01101, r14 = 5'b01110, r15 = 5'b01111, r16 = 5'b10000, 
-        r17 = 5'b10001, r18 = 5'b10010, r19 = 5'b10011, r20 = 5'b10100, r21 = 5'b10101,
-        r22 = 5'b10110, r23 = 5'b10111, r24 = 5'b11000, r25 = 5'b11001, r26 = 5'b11010, 
-        r27 = 5'b11011, r28 = 5'b11100 , r29 = 5'b11101, r30 = 5'b11110, r31 = 5'b11111; 
+  // Control FSM state table (Next State Logic).
+  // Is a function of current state (Tstep_Q) and inputs (Run and Done)
+  always @(*)
+    case (Tstep_Q)
+      fetch: begin  // instruction fetch
+        if (~Run) Tstep_D = fetch;
+        else Tstep_D = mem_wait;
+      end
+      mem_wait: begin  // wait cycle for synchronous memory
+        Tstep_D = decode;
+      end
+      decode: begin  // this time step stores the instruction word in IR
+        Tstep_D =  exec;
+      end
+      exec: begin
+        if (Done) Tstep_D = fetch;
+        else Tstep_D = access;
+      end
+      access: begin
+        if (Done) Tstep_D = fetch;
+        else Tstep_D = write_back;
+      end
+      write_back: begin  // instructions end after this time step
+        Tstep_D = fetch;
+      end
+      default: Tstep_D = 3'bxxx;
+    endcase
 
-    /* Stages */
-    parameter fetch = 3'b000, decode_0 = 3'b001, decode_1 = 3'b010, exec = 3'b011, access = 3'b100, write = 3'b101;
 
-    //control signals depending on instruction type
-    /*
-        In the form {ALUSrc, MemtoReg, RegWrite, MemRead, MemWrite, Branch, ALUOp1, ALUOp0}
-    */
-    assign r_sign = 7'b00100010;
-    assign ld_sign = 7'11110000;
-    assign r_sign = 7'1x001000;
-    assign r_sign = 7'0x000101;
+  parameter R_type = 7'b0110011, I_type_1=7'b0000011, I_type_2 = 7'b0010011;
+  parameter SB_type = 7'b1100111, S_type = 7'b0100011, U_type = 7'b0110111, UJ_type=7'b1101111;
 
+  //arithmetic instruction funct3
+  parameter SLL = 3'b001, XOR = 3'b100, SRL = 3'b101, SRA = 3'b101, OR = 3'b110, AND = 3'b111;
 
-    //instruction format encodings 
-    assign opcode = IR[6:0];
-    assign rd = IR[11:7];
-    assign funct7 = IR[31:25];
-    assign rs1 = IR[19:15];
-    assign rs2 = IR[24:20];
-    assign funct3 = IR[14:12];
-    assign S_imm = {IR[31:25], IR[11:7]};
-    assign SB_imm = {IR[12], IR[10:5], IR[4:1], IR[11]};
-    assign I_imm = IR[31:20];
-    assign UJ_imm = {IR[20], IR[10:1], IR[11], IR[19:12]}
-    assign U_imm = {IR[31:12]}
+  // selectors for the BusWires multiplexer
+  parameter _r0 = 5'b00000, _R1 = 5'b00001, _R2 = 5'b00010, _R3 = 5'b00011, _R4 = 5'b00100, 
+        _R5 = 5'b00101, _R6 = 5'b00110, _R7 = 5'b00111, _R8 = 5'b01000,  _R9 = 5'b01001,  _R10 = 5'b01010,  _R11 = 5'b01011,
+         _R12 = 5'b01100,  _R13 = 5'b01101,  _R14 = 5'b01110,  _R15 = 5'b01111,  _R16 = 5'b10000,
+          _R17 = 5'b10001,  _R18 = 5'b10010,  _R19 = 5'b10011,  _R20 = 5'b10100,  _R21 = 5'b10101,
+           _R22 = 5'b10110,  _R23 = 5'b10111,  _R24 = 5'b11000,  _R25 = 5'b11001,  _R26 = 5'b11010,
+            _R27 = 5'b11011,  _R28 = 5'b11100,  _R29 = 5'b11101,  _R30 = 5'b11110,  _R31 = 5'b11111;
 
-    //instruction encodings {opcode, funct3, funct6/7}
-    //R-type
-    assign add = 17'b01100110000000000
-    assign sub = 17'b01100110000100000
-    assign sll = 17'b01100110010000000
-    assign XOR = 17'b01100111000000000
-    assign srl = 17'b01100111010000000
-    assign sra = 17'b01100111010000000
-    assign OR = 17'b01100111100000000
-    assign AND = 17'b01100111110000000
-    assign lr.d = 17'b01100110110001000
-    assign sc.d = 17'b01100110110001100
+  // Control FSM outputs
+  always @(*) begin  // Output Logic
 
-    //I-type
-    assign ld = 10'b0000011000
-    assign lh = 10'b0000011001
-    assign iw = 10'b0000011010
-    assign id = 10'b0000011011
-    assign ibu = 10'b0000011100
-    assign ihu = 10'b0000011101
-    assign iwu = 10'b0000011110
-    assign addi = 10'b0010011000
-    assign slli = 17'b00100110010000000
-    assign xori = 10'b0010011100
-    assign srli = 17'b00100111010000000
-    assign srai = 17'b00100111010100000
-    assign or1 = 10'b0010011110
-    assign andi = 10'b0010011111
-    assign jalr = 10'b1100111000
+    // default values for control signals
+    rs1_in     = 1'b0;
+    rd_in = 1'b0;
+    //A_in      = 1'b0;
+    G_in      = 1'b0;
+    F_in      = 1'b0;
+    IR_in     = 1'b0;
+    DOUT_in   = 1'b0;
+    ADDR_in   = 1'b0;
+    Select1    = 5'bxxxxx;
+    Select2 = 5'bxxxxx;
+    Arith = 1'b0;
+    AddSub    = 1'b0;
+    Imm = 1'b0;
+    W_D       = 1'b0;
+    Done      = 1'b0;
+    pc_in     = 1'b0;  // default pc enable
+    pc_incr   = 1'b0;
+    sp_incr   = 1'b0;
+    sp_decr   = 1'b0;
 
-    // S-type
-    assign sb = 10'b0100011000
-    assign sh = 10'b0100011001
-    assign sw = 10'b0100011010
-    assign sd = 10'b0010011111
+    case (Tstep_Q)
 
-    //SB-type
-    assign beq = 10'b1100111000
-    assign bne = 10'b1100111001
-    assign blt = 10'b1100111100
-    assign bge = 10'b1100111101
-    assign bltu = 10'b1100111110
-    assign bgeq = 10'b1100111111
+      fetch: begin  // fetch the instruction
+        ADDR_in = 1'b1;
+        pc_incr = Run;  // to increment pc
+      end
 
-    //U-type
-    assign lui = 7'b0110111
-    
-    //UJ-type
-    assign jal = 7'b1101111
+      mem_wait: begin  // wait cycle for synchronous memory
+      end
 
-    /*Note: 
-    register x0 is harwired to value 0
-    register x1 is PC(or link register)
-    register x2 is sp
-    register x3 is global pointer(gp)
-    register x4 is thread pointer(tp)
-    register x8 frame pointer
-    */
+      decode: IR_in = 1'b1;  // store instruction on DIN in IR
 
-    //FSM controlling instruction clock cycles, rewrite it to be pipelined
-    always @(*)
-        case (T_Q)
-        T0: begin  // instruction fetch
-            if (~Run) T_D = fetch;
-            else T_D = decode;
+      exec:  // execute instruction
+      case (opcode)
+        R_type: begin
+          Select1 = rs1;
+          Select2 = rs2;
+          G_in = 1'b1;
+
+          case (funct3)
+            0: begin //add 
+              if (funct7[5] == 1) AddSub = 1'b1;
+            end
+            default: begin
+              Arith = 1'b1;
+            end
+
+          endcase
         end
-        T1: begin  // instruction decode
-            T_D = exec;
+        I_type_2: begin
+          Select1 = rs1;
+          Imm = 1'b1;
+          G_in = 1'b1;
+          case (funct3)
+            0: begin //add is default
+            end
+            default: begin
+              Arith = 1'b1;
+            end
+
+          endcase
         end
-        T2: begin  // execute instruction
-            T_D = access;
-        end
-        T3: begin //access memory
-            if (Done) T_D = fetch;
-            else T_D = write;
-        end
-        T4: begin //write-back
-            T_D = fetch;
-        end
-        default: T_D = 3'bxxx;
-        endcase
-
-    //Main control FSM outputs
-    always @(*) begin
-        //default values
-        rX_in = 1'b0;
-        A_in = 1'b0;
-        G_in = 1'b0;
-        F_in = 1'b0;
-        IR_in = 1'b0;
-        DOUT_in = 1'b0;
-        ADDR_in = 1'b0;
-        sel = 5'bxxxxx;
-        AddSub = 1'b0;
-        ALU_and = 1'b0;
-        ALU_shift = 1'b0;
-        W_D = 1'b0;
-        Done = 1'b0;
-        sp_in = R_in[5];
-        lr_in = R_in[6];
-        pc_in = R_in[7];
-        pc_incr = 1'b0;
-        //sp_incr = 1'b0;
-        //sp_decr = 1'b0;
-
-        case (T_Q)
-            fetch: begin
-                sel = pc; //puts pc on bus
-                ADDR_in = 1;
-                pc_incr = Run; //increments pc
-            end
-            decode_0: begin
-                //do nothing and wait for memory cycle, instruction decode is done combinatorially
-            end
-            decode_1: begin
-            end
-            exec: begin
-
-            end
-            access: begin
-            end
-            write: begin
-            end
-        endcase
-
-    end
-    
-
-    //instruction decode
-    always @(*) begin
-        
-    end
-    
-    //Control FF's
-    always @(posedge Clock) begin
-        if (!resetn) T_Q <= T0;
-        else T_Q <= T_D;
-    end
-endmodule
-
-//governs ALU
-module datapath(BusWires, AddSub, Cout, Sum, PC, reg1, reg2, Zero);
-    
-    wire [31:0] BusWires;
-    wire [31:0] Sum;
-    wire [31:0] Cout;
-
-    //controls branch control logic
-    output Zero;
-
-    //assign to Imm Gen(sign extended) << 1 added to PC
-    wire [31:0] bTarget; 
-
-
-    //control signals
-    wire AddSub;
-
-    //ALU
-    always @(*) begin
-        if (AddSub) {Cout, Sum} = A + ~BusWires + 16'b1;
-        else {Cout, Sum} = A + BusWires;
-    end
-
-    /*
-    always @(*)
-    if (ALU_shift)
-      case (shift_type)
-        lsl: {ALU_Cout, Sum} = A << BusWires[3:0];
-        lsr: {ALU_Cout, Sum} = A >> BusWires[3:0];
-        asr: {ALU_Cout, Sum} = {{16{A[15]}}, A} >> BusWires[3:0];
-        ror: {ALU_Cout, Sum} = (A >> BusWires[3:0]) | (A << (16 - BusWires[3:0]));
+        default: ;
       endcase
-    else if (ALU_and) {ALU_Cout, Sum} = A & BusWires;
-    else if (AddSub) {ALU_Cout, Sum} = A + ~BusWires + 16'b1;
-    else {ALU_Cout, Sum} = A + BusWires;
-    */
 
+      access:  // define signals access
+      case (opcode)
+        R_type: begin
+          case (funct3)
+            0: begin //add
+            end
+
+          endcase
+        end
+          
+        I_type_2: begin
+          case (funct3)
+            0: begin
+            end
+
+          endcase
+        end
+        default: ;
+      endcase
+
+      write_back:  // define write_back
+      case (opcode)
+      R_type: begin
+        case (funct3)
+          0: begin
+            rd_in = 1'b1;
+            Done = 1'b1;
+          end
+        endcase
+      end
+
+      I_type_2: begin
+          case (funct3)
+            0: begin
+              rd_in = 1'b1;
+              Done = 1'b1;
+            end
+
+          endcase
+        end
+        default: ;
+      endcase
+
+      default: ;
+    endcase
+  end
+
+  // Control FSM flip-flops
+  // State Register
+  always @(posedge Clock)
+    if (!Resetn) Tstep_Q <= fetch;
+    else Tstep_Q <= Tstep_D;
+
+  regn reg_0 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[0]),
+      .Clock(Clock),
+      .Q(r0)
+  );
+  regn reg_1 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[1]),
+      .Clock(Clock),
+      .Q(r1)
+  );
+  regn reg_2 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[2]),
+      .Clock(Clock),
+      .Q(r2)
+  );
+  regn reg_3 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[3]),
+      .Clock(Clock),
+      .Q(r3)
+  );
+  regn reg_4 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[4]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_5 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[5]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_6 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[6]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_7 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[7]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_8 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[8]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_9 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[9]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_10 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[10]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_11 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[11]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_12 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[12]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_13 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[13]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_14 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[14]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_15 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[15]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_16 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[16]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_17 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[17]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_18 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[18]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_19 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[19]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_20 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[20]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_21 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[21]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_22 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[22]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_23 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[23]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_24 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[24]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_25 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[25]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_26 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[26]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_27 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[27]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_28 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[28]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_29 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[29]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_30 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[30]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+    regn reg_31 (
+      .D(G),
+      .Resetn(Resetn),
+      .En(R_in[31]),
+      .Clock(Clock),
+      .Q(r4)
+  );
+
+  // program counter
+  pc_count reg_pc (
+      .D(PCSrc),
+      .Resetn(Resetn),
+      .Clock(Clock),
+      .En(pc_incr),
+      .PLoad(pc_in),
+      .Q(pc)
+  );
+
+  regn reg_DOUT (
+      .D(G),
+      .Resetn(Resetn),
+      .En(DOUT_in),
+      .Clock(Clock),
+      .Q(DOUT)
+  );
+
+  regn reg_ADDR (
+      .D(G),
+      .Resetn(Resetn),
+      .En(ADDR_in),
+      .Clock(Clock),
+      .Q(ADDR)
+  );
+
+  regn reg_IR (
+      .D(DIN),
+      .Resetn(Resetn),
+      .En(IR_in),
+      .Clock(Clock),
+      .Q(IR)
+  );
+
+  regn #(.n(1)) reg_W (
+      .D(W_D),
+      .Resetn(Resetn),
+      .En(1'b1),
+      .Clock(Clock),
+      .Q(W)
+  );
+
+  parameter lsl = 2'b00, lsr = 2'b01, asr = 2'b10, ror = 2'b11;
+  wire [1:0] shift_type;
+  assign shift_type = IR[6:5];
+
+  //pc logic unit, add branch functionality by having ALU operations and a mux
+  always @(*)
+    PCSrc = pc + 4;
+
+
+  // alu
+  always @(*)
+    if (Arith) //set of R-type non-add arithmetic instructions
+      case (funct3)
+        SLL: {ALU_Cout, Sum} = BusWires1 << BusWires2;
+        SRL: {ALU_Cout, Sum} = BusWires1 >> BusWires2;
+        //SRA: {ALU_Cout, Sum} = {{32{BusWires1[15]}}, BusWires1} >> BusWires2;
+        XOR: {ALU_Cout, Sum} = BusWires1 ^ BusWires2;
+        OR: {ALU_Cout, Sum} = BusWires1 | BusWires2;
+        AND: {ALU_Cout, Sum} = BusWires1 & BusWires2;
+      endcase
+    else if (AddSub) {ALU_Cout, Sum} = BusWires1 + ~BusWires2 + 32'b1; //sub
+    else {ALU_Cout, Sum} = BusWires1 + BusWires2; //add
+
+  regn reg_G (
+      .D(Sum),
+      .Resetn(Resetn),
+      .En(G_in),
+      .Clock(Clock),
+      .Q(G)
+  );
+
+  // define the internal processor bus
+  always @(*)
+    case (Select1)
+      _r0: BusWires1 = r0;
+      _R1: BusWires1 = r1;
+      _R2: BusWires1 = r2;
+      _R3: BusWires1 = r3;
+      _R4: BusWires1 = r4;
+      _R5: BusWires1 = r5;
+      _R6: BusWires1 = r6;
+      _R7: BusWires1 = r7;
+      _R8: BusWires1 = r8;
+      _R9: BusWires1 = r9;
+      _R10: BusWires1 = r10;
+      _R11: BusWires1 = r11;
+      _R12: BusWires1 = r12;
+      _R13: BusWires1 = r13;
+      _R14: BusWires1 = r14;
+      _R15: BusWires1 = r15;
+      _R16: BusWires1 = r16;
+      _R17: BusWires1 = r17;
+      _R18: BusWires1 = r18;
+      _R19: BusWires1 = r19;
+      _R20: BusWires1 = r20;
+      _R21: BusWires1 = r21;
+      _R22: BusWires1 = r22;
+      _R23: BusWires1 = r23;
+      _R24: BusWires1 = r24;
+      _R25: BusWires1 = r25;
+      _R26: BusWires1 = r26;
+      _R27: BusWires1 = r27;
+      _R28: BusWires1 = r28;
+      _R29: BusWires1 = r29;
+      _R30: BusWires1 = r30;
+      _R31: BusWires1 = r31;
+      default: BusWires1 = 32'bx;
+    endcase
+
+    always @(*)
+    if (Imm) begin
+      BusWires2 = {21'b0,I_Imm};
+    end
+    else begin
+      case (Select2)
+        _r0: BusWires2 = r0;
+        _R1: BusWires2 = r1;
+        _R2: BusWires2 = r2;
+        _R3: BusWires2 = r3;
+        _R4: BusWires2 = r4;
+        _R5: BusWires2 = r5;
+        _R6: BusWires2 = r6;
+        _R7: BusWires2 = r7;
+        _R8: BusWires2 = r8;
+        _R9: BusWires2 = r9;
+        _R10: BusWires2 = r10;
+        _R11: BusWires2 = r11;
+        _R12: BusWires2 = r12;
+        _R13: BusWires2 = r13;
+        _R14: BusWires2 = r14;
+        _R15: BusWires2 = r15;
+        _R16: BusWires2 = r16;
+        _R17: BusWires2 = r17;
+        _R18: BusWires2 = r18;
+        _R19: BusWires2 = r19;
+        _R20: BusWires2 = r20;
+        _R21: BusWires2 = r21;
+        _R22: BusWires2 = r22;
+        _R23: BusWires2 = r23;
+        _R24: BusWires2 = r24;
+        _R25: BusWires2 = r25;
+        _R26: BusWires2 = r26;
+        _R27: BusWires2 = r27;
+        _R28: BusWires2 = r28;
+        _R29: BusWires2 = r29;
+        _R30: BusWires2 = r30;
+        _R31: BusWires2 = r31;
+        default: BusWires2 = 32'bx;
+      endcase
+    end
+
+  regn #(
+      .n(3)
+  ) reg_F (
+      .D({ALU_Cout, Sum[31], (Sum == 0)}),
+      .Resetn(Resetn),
+      .Clock(Clock),
+      .En(F_in),
+      .Q({C, N, Z})
+  );
 endmodule
 
-//32-bit general register
-module regn #(parameter n = 32) (D, Resetn, E, Clock, Q);
-    input wire [n-1:0] D;
-    input wire Resetn;
-    input wire E;
-    input wire Clock;
-    output reg [n-1:0] Q;
-    
-    always @(posedge Clock)
-        if (!Resetn) Q <= 0;
-        else if (E) Q <= D;
+module pc_count (
+    input wire [31:0] D,
+    input wire Resetn,
+    input wire Clock,
+    input wire En,
+    input wire PLoad,
+    output reg [31:0] Q
+);
+  always @(posedge Clock)
+    if (!Resetn) Q <= 16'b0;
+    else if (PLoad) Q <= D;
+    else if (En) Q <= Q + 1'b1;
+endmodule
+
+module sp_count (  // sync. up/down counter w/ parallel load & active-low reset
+    input wire [31:0] D,
+    input wire Resetn,
+    input wire Clock,
+    input wire Up,
+    input wire Down,
+    input wire PLoad,
+    output reg [31:0] Q
+);
+  always @(posedge Clock)
+    if (!Resetn) Q <= 32'b0;
+    else if (PLoad) Q <= D;
+    else if (Up) Q <= Q + 1'b1;
+    else if (Down) Q <= Q - 1'b1;
+endmodule
+
+module dec3to8 (
+    input wire En,  // enable
+    input wire [4:0] W,
+    output reg [0:31] Y
+);
+  always @(*)
+    if (!En) Y = 11'b00000000;
+    else
+      case (W) 
+        5'b00000: Y = 32'b10000000000000000000000000000000;
+        5'b00001: Y = 32'b01000000000000000000000000000000;
+        5'b00010: Y = 32'b00100000000000000000000000000000;
+        5'b00011: Y = 32'b00010000000000000000000000000000;
+        5'b00100: Y = 32'b00001000000000000000000000000000;
+        5'b00101: Y = 32'b00000100000000000000000000000000;
+        5'b00110: Y = 32'b00000010000000000000000000000000;
+        5'b00111: Y = 32'b00000001000000000000000000000000;
+        5'b01000: Y = 32'b00000000100000000000000000000000;
+        5'b01001: Y = 32'b00000000010000000000000000000000;
+        5'b01010: Y = 32'b00000000001000000000000000000000;
+        5'b01011: Y = 32'b00000000000100000000000000000000;
+        5'b01100: Y = 32'b00000000000010000000000000000000;
+        5'b01101: Y = 32'b00000000000001000000000000000000;
+        5'b01110: Y = 32'b00000000000000100000000000000000;
+        5'b01111: Y = 32'b00000000000000010000000000000000;
+        5'b10000: Y = 32'b00000000000000001000000000000000;
+        5'b10001: Y = 32'b00000000000000000100000000000000;
+        5'b10010: Y = 32'b00000000000000000010000000000000;
+        5'b10011: Y = 32'b00000000000000000001000000000000;
+        5'b10100: Y = 32'b00000000000000000000100000000000;
+        5'b10101: Y = 32'b00000000000000000000010000000000;
+        5'b10110: Y = 32'b00000000000000000000001000000000;
+        5'b10111: Y = 32'b00000000000000000000000100000000;
+        5'b11000: Y = 32'b00000000000000000000000010000000;
+        5'b11001: Y = 32'b00000000000000000000000001000000;
+        5'b11010: Y = 32'b00000000000000000000000000100000;
+        5'b11011: Y = 32'b00000000000000000000000000010000;
+        5'b11100: Y = 32'b00000000000000000000000000001000;
+        5'b11101: Y = 32'b00000000000000000000000000000100;
+        5'b11110: Y = 32'b00000000000000000000000000000010;
+        5'b11111: Y = 32'b00000000000000000000000000000001;
+        default: Y = 32'bxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx;
+      endcase
+endmodule
+
+module regn #(
+    parameter n = 32
+) (
+    input wire [n-1:0] D,
+    input wire Resetn,
+    input wire En,
+    input wire Clock,
+    output reg [n-1:0] Q
+);
+  always @(posedge Clock)
+    if (!Resetn) Q <= 0;
+    else if (En) Q <= D;
 endmodule

@@ -41,6 +41,7 @@
 *.su
 *.idb
 *.pdb
+*.bak
 
 # Quartus files
 *.qsf
@@ -50,6 +51,7 @@
 *.qsf.bak
 *.v.bak
 *.code-workspace
+*.wlf
 
 # Kernel Module Compile Results
 *.mod*
@@ -62,3 +64,5 @@ dkms.conf
 
 #folders
 riscV_processor
+tests
+deprecated

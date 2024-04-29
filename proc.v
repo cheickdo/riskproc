@@ -4,12 +4,12 @@ module proc (
     input wire Clock,
     input wire Run,
     output wire [31:0] DOUT,
-    output wire [31:0] ADDR,
+    output reg [31:0] realADDR,
     output wire W
 );
 
   wire [0:31] R_in;  // r0, ..., r7 register enables
-  reg rs1_in, rs2_in, rd_in, IR_in, ADDR_in, Done, DOUT_in, G_in, F_in, AddSub, Arith;
+  reg rs1_in, rs2_in, rd_in, IR_in, ADDR_in, Done, DOUT_in, load, DIN_in, G_in, F_in, AddSub, Arith;
   reg [2:0] Tstep_Q, Tstep_D;
   reg [31:0] BusWires1, BusWires2, PCSrc;
   reg [5:0] Select1, Select2;  // BusWires selector
@@ -30,6 +30,7 @@ module proc (
   reg  W_D;  // used for write signal
   reg Imm;
   wire C, N, Z;
+  wire [31:0] ADDR;
 
   assign opcode = IR[6:0];
   assign rd = IR[11:7];
@@ -107,12 +108,14 @@ module proc (
     Arith = 1'b0;
     AddSub    = 1'b0;
     Imm = 1'b0;
+    DIN_in = 1'b0;
     W_D       = 1'b0;
     Done      = 1'b0;
     pc_in     = 1'b0;  // default pc enable
     pc_incr   = 1'b0;
     sp_incr   = 1'b0;
     sp_decr   = 1'b0;
+    load = 1'b0;
 
     case (Tstep_Q)
 
@@ -143,6 +146,18 @@ module proc (
 
           endcase
         end
+
+        I_type_1: begin
+          case(funct3)
+            1: begin //load halfword
+              Imm = 1'b1;
+              Select1 = rs1;
+              G_in = 1'b1;
+            end
+            default: ;
+          endcase
+        end
+        
         I_type_2: begin
           Select1 = rs1;
           Imm = 1'b1;
@@ -168,6 +183,15 @@ module proc (
 
           endcase
         end
+
+        I_type_1: begin
+          case(funct3) 
+            1: begin // load halfword
+              //ADDR_in = 1'b1;
+              load = 1'b1;
+            end
+          endcase
+        end
           
         I_type_2: begin
           case (funct3)
@@ -187,6 +211,17 @@ module proc (
             rd_in = 1'b1;
             Done = 1'b1;
           end
+        endcase
+      end
+
+      I_type_1: begin
+        case (funct3)
+          1: begin //load halfword
+            rd_in = 1'b1;
+            Done = 1'b1;
+            DIN_in = 1'b1;
+          end
+
         endcase
       end
 
@@ -488,7 +523,11 @@ module proc (
       .En(ADDR_in),
       .Clock(Clock),
       .Q(ADDR)
-  );
+  ); //check load, if yes, ADDR <-
+
+  always@(*)
+    if (load) realADDR = G;
+    else realADDR = ADDR;
 
   regn reg_IR (
       .D(DIN),
@@ -517,7 +556,8 @@ module proc (
 
   // alu
   always @(*)
-    if (Arith) //set of R-type non-add arithmetic instructions
+    if (DIN_in) Sum = DIN;
+    else if (Arith) //set of R-type non-add arithmetic instructions
       case (funct3)
         SLL: {ALU_Cout, Sum} = BusWires1 << BusWires2;
         SRL: {ALU_Cout, Sum} = BusWires1 >> BusWires2;

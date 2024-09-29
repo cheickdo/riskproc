@@ -1,15 +1,15 @@
 module proc (
-    input wire [31:0] DIN,
-    input wire Resetn,
-    input wire Clock,
-    input wire Run,
-    output wire [31:0] DOUT,
-    output reg [31:0] realADDR,
+    input wire [31:0] din,
+    input wire resetn,
+    input wire clk,
+    input wire run,
+    output wire [31:0] dout,
+    output reg [31:0] realaddr,
     output wire W
 );
 
   wire [0:31] R_in;  // r0, ..., r7 register enables
-  reg rs1_in, rs2_in, rd_in, IR_in, ADDR_in, Done, DOUT_in, load, DIN_in, G_in, F_in, AddSub, Arith;
+  reg rs1_in, rs2_in, rd_in, IR_in, ADDR_in, Done, dout_in, load, din_in, G_in, F_in, AddSub, Arith;
   reg [2:0] Tstep_Q, Tstep_D;
   reg [31:0] BusWires1, BusWires2, PCSrc;
   reg [5:0] Select1, Select2;  // BusWires selector
@@ -49,11 +49,11 @@ module proc (
   parameter fetch = 3'b000,mem_wait = 3'b001, decode = 3'b010,  exec = 3'b011, access = 3'b100, write_back = 3'b101;
 
   // Control FSM state table (Next State Logic).
-  // Is a function of current state (Tstep_Q) and inputs (Run and Done)
+  // Is a function of current state (Tstep_Q) and inputs (run and Done)
   always @(*)
     case (Tstep_Q)
       fetch: begin  // instruction fetch
-        if (~Run) Tstep_D = fetch;
+        if (~run) Tstep_D = fetch;
         else Tstep_D = mem_wait;
       end
       mem_wait: begin  // wait cycle for synchronous memory
@@ -101,14 +101,14 @@ module proc (
     G_in      = 1'b0;
     F_in      = 1'b0;
     IR_in     = 1'b0;
-    DOUT_in   = 1'b0;
+    dout_in   = 1'b0;
     ADDR_in   = 1'b0;
     Select1    = 5'bxxxxx;
     Select2 = 5'bxxxxx;
     Arith = 1'b0;
     AddSub    = 1'b0;
     Imm = 1'b0;
-    DIN_in = 1'b0;
+    din_in = 1'b0;
     W_D       = 1'b0;
     Done      = 1'b0;
     pc_in     = 1'b0;  // default pc enable
@@ -121,13 +121,13 @@ module proc (
 
       fetch: begin  // fetch the instruction
         ADDR_in = 1'b1;
-        pc_incr = Run;  // to increment pc
+        pc_incr = run;  // to increment pc
       end
 
       mem_wait: begin  // wait cycle for synchronous memory
       end
 
-      decode: IR_in = 1'b1;  // store instruction on DIN in IR
+      decode: IR_in = 1'b1;  // store instruction on din in IR
 
       exec:  // execute instruction
       case (opcode)
@@ -153,6 +153,7 @@ module proc (
               Imm = 1'b1;
               Select1 = rs1;
               G_in = 1'b1;
+              din_in = 1'b1; //new change
             end
             default: ;
           endcase
@@ -219,7 +220,7 @@ module proc (
           1: begin //load halfword
             rd_in = 1'b1;
             Done = 1'b1;
-            DIN_in = 1'b1;
+            //din_in = 1'b1;
           end
 
         endcase
@@ -243,305 +244,305 @@ module proc (
 
   // Control FSM flip-flops
   // State Register
-  always @(posedge Clock)
-    if (!Resetn) Tstep_Q <= fetch;
+  always @(posedge clk)
+    if (!resetn) Tstep_Q <= fetch;
     else Tstep_Q <= Tstep_D;
 
   regn reg_0 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[0]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r0)
   );
   regn reg_1 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[1]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r1)
   );
   regn reg_2 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[2]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r2)
   );
   regn reg_3 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[3]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r3)
   );
   regn reg_4 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[4]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_5 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[5]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_6 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[6]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_7 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[7]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_8 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[8]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_9 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[9]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_10 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[10]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_11 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[11]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_12 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[12]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_13 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[13]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_14 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[14]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_15 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[15]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_16 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[16]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_17 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[17]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_18 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[18]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_19 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[19]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_20 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[20]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_21 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[21]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_22 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[22]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_23 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[23]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_24 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[24]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_25 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[25]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_26 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[26]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_27 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[27]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_28 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[28]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_29 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[29]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_30 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[30]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
     regn reg_31 (
       .D(G),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(R_in[31]),
-      .Clock(Clock),
+      .clk(clk),
       .Q(r4)
   );
 
   // program counter
   pc_count reg_pc (
       .D(PCSrc),
-      .Resetn(Resetn),
-      .Clock(Clock),
+      .resetn(resetn),
+      .clk(clk),
       .En(pc_incr),
       .PLoad(pc_in),
       .Q(pc)
   );
 
-  regn reg_DOUT (
+  regn reg_dout (
       .D(G),
-      .Resetn(Resetn),
-      .En(DOUT_in),
-      .Clock(Clock),
-      .Q(DOUT)
+      .resetn(resetn),
+      .En(dout_in),
+      .clk(clk),
+      .Q(dout)
   );
 
   regn reg_ADDR (
-      .D(G),
-      .Resetn(Resetn),
+      .D(pc), //changed G to pc since G is used in realaddr
+      .resetn(resetn),
       .En(ADDR_in),
-      .Clock(Clock),
+      .clk(clk),
       .Q(ADDR)
   ); //check load, if yes, ADDR <-
 
   always@(*)
-    if (load) realADDR = G;
-    else realADDR = ADDR;
+    if (load) realaddr = G;
+    else realaddr = ADDR;
 
   regn reg_IR (
-      .D(DIN),
-      .Resetn(Resetn),
+      .D(din),
+      .resetn(resetn),
       .En(IR_in),
-      .Clock(Clock),
+      .clk(clk),
       .Q(IR)
   );
 
   regn #(.n(1)) reg_W (
       .D(W_D),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(1'b1),
-      .Clock(Clock),
+      .clk(clk),
       .Q(W)
   );
 
@@ -556,7 +557,7 @@ module proc (
 
   // alu
   always @(*)
-    if (DIN_in) Sum = DIN;
+    if (din_in) Sum = din;
     else if (Arith) //set of R-type non-add arithmetic instructions
       case (funct3)
         SLL: {ALU_Cout, Sum} = BusWires1 << BusWires2;
@@ -571,9 +572,9 @@ module proc (
 
   regn reg_G (
       .D(Sum),
-      .Resetn(Resetn),
+      .resetn(resetn),
       .En(G_in),
-      .Clock(Clock),
+      .clk(clk),
       .Q(G)
   );
 
@@ -661,38 +662,44 @@ module proc (
       .n(3)
   ) reg_F (
       .D({ALU_Cout, Sum[31], (Sum == 0)}),
-      .Resetn(Resetn),
-      .Clock(Clock),
+      .resetn(resetn),
+      .clk(clk),
       .En(F_in),
       .Q({C, N, Z})
   );
+
+  // Dump waves
+  initial begin
+      $dumpfile("dump.vcd");
+      $dumpvars(1, proc);
+  end
 endmodule
 
 module pc_count (
     input wire [31:0] D,
-    input wire Resetn,
-    input wire Clock,
+    input wire resetn,
+    input wire clk,
     input wire En,
     input wire PLoad,
     output reg [31:0] Q
 );
-  always @(posedge Clock)
-    if (!Resetn) Q <= 16'b0;
+  always @(posedge clk)
+    if (!resetn) Q <= 16'b0;
     else if (PLoad) Q <= D;
     else if (En) Q <= Q + 1'b1;
 endmodule
 
 module sp_count (  // sync. up/down counter w/ parallel load & active-low reset
     input wire [31:0] D,
-    input wire Resetn,
-    input wire Clock,
+    input wire resetn,
+    input wire clk,
     input wire Up,
     input wire Down,
     input wire PLoad,
     output reg [31:0] Q
 );
-  always @(posedge Clock)
-    if (!Resetn) Q <= 32'b0;
+  always @(posedge clk)
+    if (!resetn) Q <= 32'b0;
     else if (PLoad) Q <= D;
     else if (Up) Q <= Q + 1'b1;
     else if (Down) Q <= Q - 1'b1;
@@ -741,18 +748,4 @@ module dec3to8 (
         5'b11111: Y = 32'b00000000000000000000000000000001;
         default: Y = 32'bxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx;
       endcase
-endmodule
-
-module regn #(
-    parameter n = 32
-) (
-    input wire [n-1:0] D,
-    input wire Resetn,
-    input wire En,
-    input wire Clock,
-    output reg [n-1:0] Q
-);
-  always @(posedge Clock)
-    if (!Resetn) Q <= 0;
-    else if (En) Q <= D;
 endmodule

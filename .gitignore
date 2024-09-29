@@ -1,11 +1,18 @@
 # Prerequisites
 *.d
 
+#configuration files
+*.cfg
+
 # Object files
 *.o
 *.ko
 *.obj
 *.elf
+
+#dumps
+*.vcd
+*.xml
 
 # Linker output
 *.ilk
@@ -67,3 +74,9 @@ riscV_processor
 tests
 deprecated
 work
+bin
+include
+lib
+lib64
+sim_build
+__pycache__

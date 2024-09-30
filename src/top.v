@@ -1,3 +1,4 @@
+`timescale 10ns/10ns
 
 module top(/*AUTOARG*/);
     /*AUTOWIRE*/

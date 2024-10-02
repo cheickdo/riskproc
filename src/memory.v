@@ -8,16 +8,15 @@ module memory
 );
     reg [31:0] my_mem[0:255];
 
-    initial begin
-        
-        $dumpfile("dump.vcd");
-        $dumpvars(2, memory);
-    end
-
     always@(*) 
         //din = my_mem[realaddr];
-        if (W) my_mem[ADDR] <= dout;
-        else din = my_mem[realaddr];
+        if (W) my_mem[realaddr] <= dout;
+        else din <= my_mem[realaddr];
     
+    initial begin
+        $dumpfile("dump.vcd");
+        $dumpvars(1, memory);
+    end
+
 
 endmodule

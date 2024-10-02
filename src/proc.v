@@ -18,7 +18,7 @@ module proc (
   wire [2:0] funct3;
   wire [7:0] opcode, funct7;
   wire [4:0] rs1, rd, rs2;  // instruction opcode and register operands
-  reg [11:0] I_Imm;
+  reg [11:0] I_Imm, S_Imm;
   wire [31:0] r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11,
     r12, r13, r14, r15, r16, r17, r18, r19, r20, r21, r22, r23, r24, r25, r26, r27, r28
     , r29, r30, r31, pc, A;
@@ -39,6 +39,7 @@ module proc (
   assign rs2 = IR[24:20];
   assign funct7 = IR[31:25];
   assign I_Imm = IR[31:20];
+  assign S_Imm = {IR[31:25], IR[11:7]};
 
   dec3to8 decX (
       .En(rd_in),
@@ -84,7 +85,7 @@ module proc (
   parameter SLL = 3'b001, XOR = 3'b100, SRL = 3'b101, SRA = 3'b101, OR = 3'b110, AND = 3'b111;
 
   // selectors for the BusWires multiplexer
-  parameter _r0 = 5'b00000, _R1 = 5'b00001, _R2 = 5'b00010, _R3 = 5'b00011, _R4 = 5'b00100, 
+  parameter _R0 = 5'b00000, _R1 = 5'b00001, _R2 = 5'b00010, _R3 = 5'b00011, _R4 = 5'b00100, 
         _R5 = 5'b00101, _R6 = 5'b00110, _R7 = 5'b00111, _R8 = 5'b01000,  _R9 = 5'b01001,  _R10 = 5'b01010,  _R11 = 5'b01011,
          _R12 = 5'b01100,  _R13 = 5'b01101,  _R14 = 5'b01110,  _R15 = 5'b01111,  _R16 = 5'b10000,
           _R17 = 5'b10001,  _R18 = 5'b10010,  _R19 = 5'b10011,  _R20 = 5'b10100,  _R21 = 5'b10101,
@@ -180,15 +181,14 @@ module proc (
         end
 
         S_type: begin
-            case (funct3)
-              2: begin //store word
-                Imm = 1'b1;
-                Select1 = rs1;
-                G_in = 1'b1;
-              end
-              default: begin
-              end
-            endcase
+          case (funct3)
+            2: begin //store word (select rs2 and output it in dout)
+              Select1 = rs2;
+              Select2 = _R0;
+              dout_in = 1'b1;
+            end
+            default: ;
+          endcase
         end
         default: ;
       endcase
@@ -224,7 +224,19 @@ module proc (
           case (funct3)
             0: begin
             end
+            default: ;
+          endcase
+        end
 
+        S_type: begin
+          case (funct3)
+            2: begin //store word
+              Imm = 1'b1;
+              Select1 = rs1;
+              G_in = 1'b1;
+              W_D = 1'b1;
+            end
+            default: ;
           endcase
         end
         default: ;
@@ -265,10 +277,21 @@ module proc (
 
           endcase
         end
-        default: ;
-      endcase
+
+      S_type: begin
+        case (funct3)
+          2: begin //store word
+            load = 1'b1;
+            G_in = 1'b1;
+            load = 1'b1;
+            Done = 1'b1;
+          end
+          default: ;
+        endcase    
+      end
 
       default: ;
+    endcase
     endcase
   end
 
@@ -330,7 +353,7 @@ module proc (
   );
 
   regn reg_dout (
-      .D(G),
+      .D(Sum),
       .resetn(resetn),
       .En(dout_in),
       .clk(clk),
@@ -400,7 +423,7 @@ module proc (
   // define the internal processor bus
   always @(*)
     case (Select1)
-      _r0: BusWires1 = r0;
+      _R0: BusWires1 = r0;
       _R1: BusWires1 = r1;
       _R2: BusWires1 = r2;
       _R3: BusWires1 = r3;
@@ -437,11 +460,17 @@ module proc (
 
     always @(*)
     if (Imm) begin
-      BusWires2 = {21'b0,I_Imm};
+      case (opcode) 
+        I_type_1: BusWires2 = {21'b0,I_Imm};
+        I_type_2: BusWires2 = {21'b0,I_Imm};
+        S_type: BusWires2 = {21'b0, S_Imm};
+        default: ;
+      endcase
+
     end
     else begin
       case (Select2)
-        _r0: BusWires2 = r0;
+        _R0: BusWires2 = r0;
         _R1: BusWires2 = r1;
         _R2: BusWires2 = r2;
         _R3: BusWires2 = r3;

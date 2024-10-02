@@ -60,7 +60,7 @@ async def proc_simple_test(dut):
     await RisingEdge(dut.clk)
 
     
-    for i in range(50):
+    for i in range(70):
         #val = random.randint(0, 1)
         #dut.d.value = val  # Assign the random value val to the input port d
 
@@ -70,6 +70,7 @@ async def proc_simple_test(dut):
         #assert dut.q.value == expected_val, f"output q was incorrect on the {i}th cycle"
         #expected_val = val # Save random value for next RisingEdge
 
+    assert dut.mem0.my_mem[0] == 9
     # Check the final input on the next clock
 
     #assert dut.q.value == expected_val, "output q was incorrect on the last cycle"

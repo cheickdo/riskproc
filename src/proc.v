@@ -155,6 +155,12 @@ module proc (
               G_in = 1'b1;
               //din_in = 1'b1; //new change
             end
+            2: begin //load halfword
+              Imm = 1'b1;
+              Select1 = rs1;
+              G_in = 1'b1;
+              //din_in = 1'b1; //new change
+            end
             default: ;
           endcase
         end
@@ -172,6 +178,18 @@ module proc (
 
           endcase
         end
+
+        S_type: begin
+            case (funct3)
+              2: begin //store word
+                Imm = 1'b1;
+                Select1 = rs1;
+                G_in = 1'b1;
+              end
+              default: begin
+              end
+            endcase
+        end
         default: ;
       endcase
 
@@ -187,7 +205,13 @@ module proc (
 
         I_type_1: begin
           case(funct3) 
-            1: begin // load halfword
+            1: begin // load halfword (currently incorrect actually, this is for load word)
+              //ADDR_in = 1'b1;
+              load = 1'b1;
+              G_in = 1'b1;
+              din_in = 1'b1;
+            end
+            2: begin
               //ADDR_in = 1'b1;
               load = 1'b1;
               G_in = 1'b1;
@@ -219,12 +243,16 @@ module proc (
 
       I_type_1: begin
         case (funct3)
-          1: begin //load halfword
+          1: begin //load halfword (incorrect)
             rd_in = 1'b1;
             Done = 1'b1;
             //din_in = 1'b1;
           end
-
+          2: begin //load halfword
+            rd_in = 1'b1;
+            Done = 1'b1;
+            //din_in = 1'b1;
+          end
         endcase
       end
 

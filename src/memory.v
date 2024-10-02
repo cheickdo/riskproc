@@ -15,9 +15,9 @@ module memory
     end
 
     always@(*) 
-        din = my_mem[realaddr];
-        //if (W) my_mem[ADDR] <= dout;
-        //else out <= my_mem[ADDR];
+        //din = my_mem[realaddr];
+        if (W) my_mem[ADDR] <= dout;
+        else din = my_mem[realaddr];
     
 
 endmodule

@@ -28,7 +28,6 @@ implement lbu
 implemernt lhu
 implement sb
 implement sh
-implement sw
 implement beq
 implement bne
 implement blt

@@ -6,9 +6,6 @@ from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge
 from cocotb.types import LogicArray
 
-#Load HW to reg 0 (broken?), load W to reg 1 from memory 3, load W to reg 2 from memory 4, add reg 1 and reg 2 and store in reg 3
-loadtest = [0b000000001000000000011, 0b1111111001000010000011, 0b10011111001000100000011, 2, 3, ]
-
 @cocotb.test()
 async def proc_simple_test(dut):
     """Test elementary functionality of processor"""
@@ -31,10 +28,12 @@ async def proc_simple_test(dut):
     #for i in range(len(loadtest)):
     #    dut.mem0.my_mem[i] = loadtest[i]
     
-    f = open("result.txt", "r")
+    f = open("test.txt", "r")
     lines = f.readlines()
 
     j = 0
+
+    print("Loading memory...")
     for line in lines:
         #print(line)
         #print(bin(int(line,2)))
@@ -45,6 +44,8 @@ async def proc_simple_test(dut):
 
 
     f.close()
+
+    print("Starting test!")
 
     await RisingEdge(dut.clk)
 
@@ -60,7 +61,7 @@ async def proc_simple_test(dut):
     await RisingEdge(dut.clk)
 
     
-    for i in range(70):
+    for i in range(150):
         #val = random.randint(0, 1)
         #dut.d.value = val  # Assign the random value val to the input port d
 
@@ -72,5 +73,7 @@ async def proc_simple_test(dut):
 
     assert dut.mem0.my_mem[0] == 9
     # Check the final input on the next clock
+
+    print("Test complete")
 
     #assert dut.q.value == expected_val, "output q was incorrect on the last cycle"

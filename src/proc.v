@@ -140,7 +140,7 @@ module proc (
           case (funct3)
             0: begin //add 
               if (funct7[5] == 1) AddSub = 1'b1;
-            end
+            end 
             default: begin
               Arith = 1'b1;
             end
@@ -196,11 +196,6 @@ module proc (
       access:  // define signals access
       case (opcode)
         R_type: begin
-          case (funct3)
-            0: begin //add
-            end
-
-          endcase
         end
 
         I_type_1: begin
@@ -245,12 +240,8 @@ module proc (
       write_back:  // define write_back
       case (opcode)
       R_type: begin
-        case (funct3)
-          0: begin
-            rd_in = 1'b1;
-            Done = 1'b1;
-          end
-        endcase
+          rd_in = 1'b1;
+          Done = 1'b1;
       end
 
       I_type_1: begin

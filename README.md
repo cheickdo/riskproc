@@ -2,20 +2,8 @@
 Implementation of a RV32I compliant RISC-V processor in Verilog
 
 
-TODO:
-Completing RV32I support
-implement xori
-implement ori
-implement andi
+TODO: Completing RV32I support
 
-implement sll
-implement srl
-implement sra
-implement slli
-implement srli
-implement srai
-
-implement slt
 implement slt
 implement sltu
 implement slti
@@ -27,6 +15,7 @@ implement lbu
 implemernt lhu
 implement sb
 implement sh
+
 implement beq
 implement bne
 implement blt

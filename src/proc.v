@@ -11,7 +11,8 @@ module proc (
   wire [31:0] R_in;  // r0, ..., r7 register enables
   reg rs1_in, rs2_in, rd_in, IR_in, ADDR_in, Done, dout_in, load, din_in, G_in, F_in, AddSub, Arith;
   reg [2:0] Tstep_Q, Tstep_D;
-  reg [31:0] BusWires1, BusWires2, PCSrc;
+  reg signed [31:0] BusWires1, BusWires2;
+  reg [31:0] PCSrc;
   reg [5:0] Select1, Select2;  // BusWires selector
   reg [31:0] Sum;
   reg ALU_Cout;  // ALU carry-out
@@ -389,8 +390,15 @@ module proc (
     else if (Arith) //set of R-type non-add arithmetic instructions
       case (funct3)
         SLL: {ALU_Cout, Sum} = BusWires1 << BusWires2;
-        SRL: {ALU_Cout, Sum} = BusWires1 >> BusWires2;
-        //SRA: {ALU_Cout, Sum} = {{32{BusWires1[15]}}, BusWires1} >> BusWires2;
+        SRL: begin
+          case (funct7)
+            0: {ALU_Cout, Sum} = BusWires1 >> BusWires2;
+            8'h20:  {ALU_Cout, Sum} = {BusWires1[31],BusWires1 >>> BusWires2};
+            default:;
+          endcase
+        end
+        //{ALU_Cout, Sum} = BusWires1 >> BusWires2;
+        //SRA: {ALU_Cout, Sum} = BusWires1 >>> BusWires2;
         XOR: {ALU_Cout, Sum} = BusWires1 ^ BusWires2;
         OR: {ALU_Cout, Sum} = BusWires1 | BusWires2;
         AND: {ALU_Cout, Sum} = BusWires1 & BusWires2;

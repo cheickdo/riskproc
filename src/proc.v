@@ -260,13 +260,8 @@ module proc (
       end
 
       I_type_2: begin
-          case (funct3)
-            0: begin
-              rd_in = 1'b1;
-              Done = 1'b1;
-            end
-
-          endcase
+            rd_in = 1'b1;
+            Done = 1'b1;
         end
 
       S_type: begin

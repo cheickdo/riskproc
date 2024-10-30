@@ -1,18 +1,18 @@
 [*]
 [*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
-[*] Tue Oct 29 23:29:59 2024
+[*] Wed Oct 30 01:25:16 2024
 [*]
 [dumpfile] "/home/chk/Documents/riskproc/verif/dump.vcd"
-[dumpfile_mtime] "Tue Oct 29 23:28:46 2024"
-[dumpfile_size] 16820
+[dumpfile_mtime] "Wed Oct 30 01:17:56 2024"
+[dumpfile_size] 17298
 [savefile] "/home/chk/Documents/riskproc/verif/default_signals.gtkw"
-[timestart] 1964000
+[timestart] 8389000
 [size] 966 743
-[pos] -777 226
-*-20.400000 3638000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] 4 601
+*-18.299999 8966000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [sst_width] 209
-[signals_width] 142
+[signals_width] 150
 [sst_expanded] 1
 [sst_vpaned_height] 357
 @22
@@ -33,10 +33,56 @@ top.core0.r1[31:0]
 top.core0.r2[31:0]
 top.core0.r3[31:0]
 top.core0.r4[31:0]
-@23
 top.core0.r5[31:0]
-@22
 top.core0.r6[31:0]
+top.core0.r7[31:0]
+top.core0.r8[31:0]
+top.core0.r9[31:0]
+top.core0.r10[31:0]
+@c00022
+top.core0.r11[31:0]
+@28
+(0)top.core0.r11[31:0]
+(1)top.core0.r11[31:0]
+(2)top.core0.r11[31:0]
+(3)top.core0.r11[31:0]
+(4)top.core0.r11[31:0]
+(5)top.core0.r11[31:0]
+(6)top.core0.r11[31:0]
+(7)top.core0.r11[31:0]
+(8)top.core0.r11[31:0]
+(9)top.core0.r11[31:0]
+(10)top.core0.r11[31:0]
+(11)top.core0.r11[31:0]
+(12)top.core0.r11[31:0]
+(13)top.core0.r11[31:0]
+(14)top.core0.r11[31:0]
+(15)top.core0.r11[31:0]
+(16)top.core0.r11[31:0]
+(17)top.core0.r11[31:0]
+(18)top.core0.r11[31:0]
+(19)top.core0.r11[31:0]
+(20)top.core0.r11[31:0]
+(21)top.core0.r11[31:0]
+(22)top.core0.r11[31:0]
+(23)top.core0.r11[31:0]
+(24)top.core0.r11[31:0]
+(25)top.core0.r11[31:0]
+(26)top.core0.r11[31:0]
+(27)top.core0.r11[31:0]
+(28)top.core0.r11[31:0]
+(29)top.core0.r11[31:0]
+(30)top.core0.r11[31:0]
+(31)top.core0.r11[31:0]
+@1401200
+-group_end
+@22
+top.core0.r12[31:0]
+top.core0.Sum[31:0]
+top.core0.BusWires1[31:0]
+top.core0.BusWires2[31:0]
+@23
+top.core0.I_Imm[11:0]
 @28
 top.core0.Done
 [pattern_trace] 1

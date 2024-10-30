@@ -3,4 +3,4 @@ from riscv_assembler.convert import AssemblyConverter as AC
 convert = AC(output_mode = 'f', nibble_mode = False, hex_mode = False)
 
 # Convert a whole .s file to text file
-convert("simple.s", "test.txt") 
+convert("second.s", "test.txt") 

@@ -1,9 +1,8 @@
-addi x8, x0, 0
-addi x9, x0, 0 
-addi x10, x0, 0 
-jal x0, EXIT
-case2:
-add x10, x10, x7
-lw x11, 0(x10)
-srai x12, x8, 7
-EXIT:
+addi x1, x0, 1
+addi x2, x0, 2 
+addi x3, x0, 3
+sub x4, x0, x1
+slti x5, x4, 1
+slti x5, x1, 2
+sltiu x5, x4, 1
+sltiu x5, x1, 4

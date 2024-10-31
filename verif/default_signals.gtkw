@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
-[*] Thu Oct 31 01:15:25 2024
+[*] Thu Oct 31 19:03:39 2024
 [*]
 [dumpfile] "/home/chk/Documents/riskproc/verif/dump.vcd"
-[dumpfile_mtime] "Thu Oct 31 01:11:04 2024"
-[dumpfile_size] 15863
+[dumpfile_mtime] "Thu Oct 31 19:02:50 2024"
+[dumpfile_size] 15599
 [savefile] "/home/chk/Documents/riskproc/verif/default_signals.gtkw"
-[timestart] 3926000
+[timestart] 4195000
 [size] 966 743
 [pos] 4 601
-*-18.900000 5188000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-18.300001 4858000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [sst_width] 209
 [signals_width] 150
@@ -39,49 +39,10 @@ top.core0.r7[31:0]
 top.core0.r8[31:0]
 top.core0.r9[31:0]
 top.core0.r10[31:0]
-@c00022
-top.core0.r11[31:0]
-@28
-(0)top.core0.r11[31:0]
-(1)top.core0.r11[31:0]
-(2)top.core0.r11[31:0]
-(3)top.core0.r11[31:0]
-(4)top.core0.r11[31:0]
-(5)top.core0.r11[31:0]
-(6)top.core0.r11[31:0]
-(7)top.core0.r11[31:0]
-(8)top.core0.r11[31:0]
-(9)top.core0.r11[31:0]
-(10)top.core0.r11[31:0]
-(11)top.core0.r11[31:0]
-(12)top.core0.r11[31:0]
-(13)top.core0.r11[31:0]
-(14)top.core0.r11[31:0]
-(15)top.core0.r11[31:0]
-(16)top.core0.r11[31:0]
-(17)top.core0.r11[31:0]
-(18)top.core0.r11[31:0]
-(19)top.core0.r11[31:0]
-(20)top.core0.r11[31:0]
-(21)top.core0.r11[31:0]
-(22)top.core0.r11[31:0]
-(23)top.core0.r11[31:0]
-(24)top.core0.r11[31:0]
-(25)top.core0.r11[31:0]
-(26)top.core0.r11[31:0]
-(27)top.core0.r11[31:0]
-(28)top.core0.r11[31:0]
-(29)top.core0.r11[31:0]
-(30)top.core0.r11[31:0]
-(31)top.core0.r11[31:0]
-@1401200
--group_end
-@22
-top.core0.r12[31:0]
 top.core0.Sum[31:0]
 top.core0.BusWires1[31:0]
 top.core0.BusWires2[31:0]
-@c00023
+@c00022
 top.core0.I_Imm[11:0]
 @28
 (0)top.core0.I_Imm[11:0]
@@ -96,12 +57,11 @@ top.core0.I_Imm[11:0]
 (9)top.core0.I_Imm[11:0]
 (10)top.core0.I_Imm[11:0]
 (11)top.core0.I_Imm[11:0]
-@1401201
+@1401200
 -group_end
 @28
 top.core0.funct3[2:0]
 @22
-top.core0.temp[7:0]
 top.core0.Sum[31:0]
 @28
 top.core0.Done

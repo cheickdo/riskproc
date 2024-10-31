@@ -88,6 +88,9 @@ module proc (
   //arithmetic instruction funct3
   parameter SLL = 3'b001, XOR = 3'b100, SRL = 3'b101, SRA = 3'b101, OR = 3'b110, AND = 3'b111, SLT = 3'b010, SLTU = 3'b011;
 
+  //Load types
+  parameter LB = 3'b000, LH = 3'b001, LW = 3'b010, LBU = 3'b100, LBHU = 3'b101;
+
   // selectors for the BusWires multiplexer
   parameter _R0 = 5'b00000, _R1 = 5'b00001, _R2 = 5'b00010, _R3 = 5'b00011, _R4 = 5'b00100, 
         _R5 = 5'b00101, _R6 = 5'b00110, _R7 = 5'b00111, _R8 = 5'b01000,  _R9 = 5'b01001,  _R10 = 5'b01010,  _R11 = 5'b01011,
@@ -153,21 +156,10 @@ module proc (
         end
 
         I_type_1: begin
-          case(funct3)
-            1: begin //load halfword
               Imm = 1'b1;
               Select1 = rs1;
               G_in = 1'b1;
               //din_in = 1'b1; //new change
-            end
-            2: begin //load halfword
-              Imm = 1'b1;
-              Select1 = rs1;
-              G_in = 1'b1;
-              //din_in = 1'b1; //new change
-            end
-            default: ;
-          endcase
         end
         
         I_type_2: begin
@@ -202,21 +194,11 @@ module proc (
         R_type: begin
         end
 
-        I_type_1: begin
-          case(funct3) 
-            1: begin // load halfword (currently incorrect actually, this is for load word)
+        I_type_1: begin //load
               //ADDR_in = 1'b1;
               load = 1'b1;
               G_in = 1'b1;
               din_in = 1'b1;
-            end
-            2: begin
-              //ADDR_in = 1'b1;
-              load = 1'b1;
-              G_in = 1'b1;
-              din_in = 1'b1;
-            end
-          endcase
         end
           
         I_type_2: begin
@@ -248,19 +230,10 @@ module proc (
           Done = 1'b1;
       end
 
-      I_type_1: begin
-        case (funct3)
-          1: begin //load halfword (incorrect)
+      I_type_1: begin //load
             rd_in = 1'b1;
             Done = 1'b1;
             //din_in = 1'b1;
-          end
-          2: begin //load halfword
-            rd_in = 1'b1;
-            Done = 1'b1;
-            //din_in = 1'b1;
-          end
-        endcase
       end
 
       I_type_2: begin
@@ -392,7 +365,10 @@ module proc (
     if (din_in) Sum = din;
     else if (Arith) //set of R-type non-add arithmetic instructions
       case (funct3)
-        SLL: {ALU_Cout, Sum} = BusWires1 << BusWires2;
+        SLL: begin
+          if (opcode == R_type)  {ALU_Cout, Sum} = BusWires1 << BusWires2;
+          else  {ALU_Cout, Sum} = BusWires1 << reduced_Imm;
+        end
         SRL: begin
           if (opcode == R_type) begin
             case (funct7)
@@ -404,14 +380,14 @@ module proc (
           
           else begin
           case (Imm_funct)
-            0: {ALU_Cout, Sum} = BusWires1 >> BusWires2;
+            0: {ALU_Cout, Sum} = BusWires1 >> reduced_Imm;
             7'h20:  {ALU_Cout, Sum} = {BusWires1[31],BusWires1 >>> reduced_Imm};
             default:;
           endcase
         end
         end
-        SLT: {ALU_Cout, Sum} = ($unsigned(BusWires1) < $unsigned(BusWires2)) ? 32'b1: 32'b0;
-        SLTU: {ALU_Cout, Sum} = ($signed(BusWires1) < $signed(BusWires2)) ? 32'b1: 32'b0;
+        SLT: {ALU_Cout, Sum} = ($signed(BusWires1) < $signed(BusWires2)) ? 32'b1: 32'b0;
+        SLTU: {ALU_Cout, Sum} = ($unsigned(BusWires1) < $unsigned(BusWires2)) ? 32'b1: 32'b0;
         XOR: {ALU_Cout, Sum} = BusWires1 ^ BusWires2;
         OR: {ALU_Cout, Sum} = BusWires1 | BusWires2;
         AND: {ALU_Cout, Sum} = BusWires1 & BusWires2;

@@ -4,11 +4,6 @@ Implementation of a RV32I compliant RISC-V processor in Verilog
 
 TODO: Completing RV32I support
 
-Double check, srli, slli (immediate value should be truncated and upper bits fixed for srai?)
-
-implement slti
-implement sltiu
-
 implement lb?
 fix lh
 implement lbu

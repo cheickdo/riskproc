@@ -501,7 +501,17 @@ void IFunction(int index,int index1)
 
 		//addition to fix srai instruction
 		if (index1 == 13) {
-			for (int k = 0; k<12; k++) binary[k] = (k==1);
+			for (int k = 0; k<5; k++) binary[k] = (k==1);
+		}
+
+		//fixing srli instruction
+		if (index1 == 12) {
+			for (int k = 0; k<5; k++) binary[k] = 0;
+		}
+
+		//fixing slli instruction
+		if (index1 == 8) {
+			for (int k = 0; k<5; k++) binary[k] = 0;
 		}
 
 		hexa();

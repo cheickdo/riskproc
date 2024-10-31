@@ -2,11 +2,11 @@ module memory
 (
     input clk,
     input W,
-    input [4:0] realaddr,
+    input [15:0] realaddr,
     input [31:0]dout,
     output reg[31:0] din
 );
-    reg [31:0] my_mem[0:255];
+    reg [31:0] my_mem[0:512];
 
     always@(*) 
         //din = my_mem[realaddr];

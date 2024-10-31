@@ -1440,6 +1440,7 @@ int main()
 	myFile.close();
 	ofstream file;
 	file.open("MCode.mc",std::ios_base::app);
+	
 
 
 	//Print the Data Memory Part in Increasing Address Order

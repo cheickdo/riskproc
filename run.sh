@@ -1,5 +1,5 @@
 cd Assembler
-./A-m
+#./A-m
 cd ../verif
 make SIM=icarus
 cd ..

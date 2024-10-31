@@ -9,12 +9,18 @@ module proc (
 );
 
   wire [31:0] R_in;  // r0, ..., r7 register enables
-  reg rs1_in, rs2_in, rd_in, IR_in, ADDR_in, Done, dout_in, load, din_in, G_in, F_in, AddSub, Arith;
+  reg rs1_in, rs2_in, rd_in, IR_in, ADDR_in, Done, dout_in, load, din_in, G_in, F_in, AddSub, Arith, zero_extend;
+  reg [1:0] width;
   reg [2:0] Tstep_Q, Tstep_D;
   reg signed [31:0] BusWires1;
   reg [31:0] BusWires2, PCSrc;
   reg [5:0] Select1, Select2;  // BusWires selector
+  
+  reg [31:0] Sum_full;
+  wire [7:0] Sum_byte = Sum_full[7:0];
+  wire [15:0] Sum_half = Sum_full[15:0];
   reg [31:0] Sum;
+
   reg ALU_Cout;  // ALU carry-out
   wire [2:0] funct3;
   wire [7:0] opcode, funct7;
@@ -124,6 +130,8 @@ module proc (
     sp_incr   = 1'b0;
     sp_decr   = 1'b0;
     load = 1'b0;
+    zero_extend = 1'b0;
+    width = 2'b00;
 
     case (Tstep_Q)
 
@@ -176,15 +184,10 @@ module proc (
           endcase
         end
 
-        S_type: begin
-          case (funct3)
-            2: begin //store word (select rs2 and output it in dout)
+        S_type: begin //store 
               Select1 = rs2;
               Select2 = _R0;
               dout_in = 1'b1;
-            end
-            default: ;
-          endcase
         end
         default: ;
       endcase
@@ -196,6 +199,19 @@ module proc (
 
         I_type_1: begin //load
               //ADDR_in = 1'b1;
+              case (funct3)
+              0: width = 2'b10;
+              1: width = 2'b01;
+              4: begin
+                zero_extend = 1'b1;
+                width = 2'b10;
+              end
+              5: begin
+                zero_extend = 1'b1;
+                width = 2'b01;
+              end
+              default: width = 2'b00;
+              endcase
               load = 1'b1;
               G_in = 1'b1;
               din_in = 1'b1;
@@ -209,16 +225,11 @@ module proc (
           endcase
         end
 
-        S_type: begin
-          case (funct3)
-            2: begin //store word
+        S_type: begin //store
               Imm = 1'b1;
               Select1 = rs1;
               G_in = 1'b1;
               W_D = 1'b1;
-            end
-            default: ;
-          endcase
         end
         default: ;
       endcase
@@ -241,16 +252,17 @@ module proc (
             Done = 1'b1;
         end
 
-      S_type: begin
+      S_type: begin //store 
         case (funct3)
-          2: begin //store word
+          0: width = 2'b10;
+          1: width = 2'b01;
+          2: width = 2'b00;
+          default:;
+        endcase
             load = 1'b1;
             G_in = 1'b1;
             load = 1'b1;
-            Done = 1'b1;
-          end
-          default: ;
-        endcase    
+            Done = 1'b1; 
       end
 
       default: ;
@@ -359,41 +371,55 @@ module proc (
   always @(*)
     PCSrc = pc + 4;
 
+  always@(*)
+    case(width)
+    2'b00: Sum = Sum_full;
+    2'b01: begin
+      if (!zero_extend) Sum = {{16{Sum_half[15]}},Sum_half};
+      else Sum = {16'b0,Sum_half};
+    end
+    2'b10: begin
+      if (!zero_extend) Sum = {{24{Sum_byte[7]}},Sum_byte};
+      else Sum = {24'b0,Sum_byte};
+    end
+    default: Sum = 2'bxx;
+    endcase
 
   // alu
   always @(*)
-    if (din_in) Sum = din;
+
+    if (din_in) Sum_full = din;
     else if (Arith) //set of R-type non-add arithmetic instructions
       case (funct3)
         SLL: begin
-          if (opcode == R_type)  {ALU_Cout, Sum} = BusWires1 << BusWires2;
-          else  {ALU_Cout, Sum} = BusWires1 << reduced_Imm;
+          if (opcode == R_type)  {ALU_Cout, Sum_full} = BusWires1 << BusWires2;
+          else  {ALU_Cout, Sum_full} = BusWires1 << reduced_Imm;
         end
         SRL: begin
           if (opcode == R_type) begin
             case (funct7)
-              0: {ALU_Cout, Sum} = BusWires1 >> BusWires2;
-              8'h20:  {ALU_Cout, Sum} = {BusWires1[31],$signed(BusWires1 >>> BusWires2)};
+              0: {ALU_Cout, Sum_full} = BusWires1 >> BusWires2;
+              8'h20:  {ALU_Cout, Sum_full} = {BusWires1[31],$signed(BusWires1 >>> BusWires2)};
               default:;
             endcase
           end
           
           else begin
           case (Imm_funct)
-            0: {ALU_Cout, Sum} = BusWires1 >> reduced_Imm;
-            7'h20:  {ALU_Cout, Sum} = {BusWires1[31],BusWires1 >>> reduced_Imm};
+            0: {ALU_Cout, Sum_full} = BusWires1 >> reduced_Imm;
+            7'h20:  {ALU_Cout, Sum_full} = {BusWires1[31],BusWires1 >>> reduced_Imm};
             default:;
           endcase
         end
         end
-        SLT: {ALU_Cout, Sum} = ($signed(BusWires1) < $signed(BusWires2)) ? 32'b1: 32'b0;
-        SLTU: {ALU_Cout, Sum} = ($unsigned(BusWires1) < $unsigned(BusWires2)) ? 32'b1: 32'b0;
-        XOR: {ALU_Cout, Sum} = BusWires1 ^ BusWires2;
-        OR: {ALU_Cout, Sum} = BusWires1 | BusWires2;
-        AND: {ALU_Cout, Sum} = BusWires1 & BusWires2;
+        SLT: {ALU_Cout, Sum_full} = ($signed(BusWires1) < $signed(BusWires2)) ? 32'b1: 32'b0;
+        SLTU: {ALU_Cout, Sum_full} = ($unsigned(BusWires1) < $unsigned(BusWires2)) ? 32'b1: 32'b0;
+        XOR: {ALU_Cout, Sum_full} = BusWires1 ^ BusWires2;
+        OR: {ALU_Cout, Sum_full} = BusWires1 | BusWires2;
+        AND: {ALU_Cout, Sum_full} = BusWires1 & BusWires2;
       endcase
-    else if (AddSub) {ALU_Cout, Sum} = BusWires1 + ~BusWires2 + 32'b1; //sub
-    else {ALU_Cout, Sum} = BusWires1 + BusWires2; //add
+    else if (AddSub) {ALU_Cout, Sum_full} = BusWires1 + ~BusWires2 + 32'b1; //sub
+    else {ALU_Cout, Sum_full} = BusWires1 + BusWires2; //add
 
   regn reg_G (
       .D(Sum),

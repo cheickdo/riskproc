@@ -26,7 +26,7 @@ module top(/*AUTOARG*/);
 		// Inputs
 		.clk			(clk),
 		.W			(W),
-		.realaddr		(realaddr[4:0]),
+		.realaddr		(realaddr[15:0]),
 		.dout			(dout[31:0]));
     
 endmodule

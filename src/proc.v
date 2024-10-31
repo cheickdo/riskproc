@@ -11,8 +11,8 @@ module proc (
   wire [31:0] R_in;  // r0, ..., r7 register enables
   reg rs1_in, rs2_in, rd_in, IR_in, ADDR_in, Done, dout_in, load, din_in, G_in, F_in, AddSub, Arith;
   reg [2:0] Tstep_Q, Tstep_D;
-  reg signed [31:0] BusWires1, BusWires2;
-  reg [31:0] PCSrc;
+  reg signed [31:0] BusWires1;
+  reg [31:0] BusWires2, PCSrc;
   reg [5:0] Select1, Select2;  // BusWires selector
   reg [31:0] Sum;
   reg ALU_Cout;  // ALU carry-out
@@ -32,6 +32,9 @@ module proc (
   reg Imm;
   wire C, N, Z;
   wire [31:0] ADDR;
+
+  wire [6:0] Imm_funct = I_Imm[11:5];
+  wire [4:0] reduced_Imm = I_Imm[4:0];
 
   assign opcode = IR[6:0];
   assign rd = IR[11:7];
@@ -83,7 +86,7 @@ module proc (
   parameter SB_type = 7'b1100111, S_type = 7'b0100011, U_type = 7'b0110111, UJ_type=7'b1101111;
 
   //arithmetic instruction funct3
-  parameter SLL = 3'b001, XOR = 3'b100, SRL = 3'b101, SRA = 3'b101, OR = 3'b110, AND = 3'b111;
+  parameter SLL = 3'b001, XOR = 3'b100, SRL = 3'b101, SRA = 3'b101, OR = 3'b110, AND = 3'b111, SLT = 3'b010, SLTU = 3'b011;
 
   // selectors for the BusWires multiplexer
   parameter _R0 = 5'b00000, _R1 = 5'b00001, _R2 = 5'b00010, _R3 = 5'b00011, _R4 = 5'b00100, 
@@ -391,14 +394,24 @@ module proc (
       case (funct3)
         SLL: {ALU_Cout, Sum} = BusWires1 << BusWires2;
         SRL: begin
-          case (funct7)
+          if (opcode == R_type) begin
+            case (funct7)
+              0: {ALU_Cout, Sum} = BusWires1 >> BusWires2;
+              8'h20:  {ALU_Cout, Sum} = {BusWires1[31],$signed(BusWires1 >>> BusWires2)};
+              default:;
+            endcase
+          end
+          
+          else begin
+          case (Imm_funct)
             0: {ALU_Cout, Sum} = BusWires1 >> BusWires2;
-            8'h20:  {ALU_Cout, Sum} = {BusWires1[31],BusWires1 >>> BusWires2};
+            7'h20:  {ALU_Cout, Sum} = {BusWires1[31],BusWires1 >>> reduced_Imm};
             default:;
           endcase
         end
-        //{ALU_Cout, Sum} = BusWires1 >> BusWires2;
-        //SRA: {ALU_Cout, Sum} = BusWires1 >>> BusWires2;
+        end
+        SLT: {ALU_Cout, Sum} = ($unsigned(BusWires1) < $unsigned(BusWires2)) ? 32'b1: 32'b0;
+        SLTU: {ALU_Cout, Sum} = ($signed(BusWires1) < $signed(BusWires2)) ? 32'b1: 32'b0;
         XOR: {ALU_Cout, Sum} = BusWires1 ^ BusWires2;
         OR: {ALU_Cout, Sum} = BusWires1 | BusWires2;
         AND: {ALU_Cout, Sum} = BusWires1 & BusWires2;

@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
-[*] Wed Oct 30 01:25:16 2024
+[*] Thu Oct 31 01:15:25 2024
 [*]
 [dumpfile] "/home/chk/Documents/riskproc/verif/dump.vcd"
-[dumpfile_mtime] "Wed Oct 30 01:17:56 2024"
-[dumpfile_size] 17298
+[dumpfile_mtime] "Thu Oct 31 01:11:04 2024"
+[dumpfile_size] 15863
 [savefile] "/home/chk/Documents/riskproc/verif/default_signals.gtkw"
-[timestart] 8389000
+[timestart] 3926000
 [size] 966 743
 [pos] 4 601
-*-18.299999 8966000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-18.900000 5188000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [sst_width] 209
 [signals_width] 150
@@ -81,8 +81,28 @@ top.core0.r12[31:0]
 top.core0.Sum[31:0]
 top.core0.BusWires1[31:0]
 top.core0.BusWires2[31:0]
-@23
+@c00023
 top.core0.I_Imm[11:0]
+@28
+(0)top.core0.I_Imm[11:0]
+(1)top.core0.I_Imm[11:0]
+(2)top.core0.I_Imm[11:0]
+(3)top.core0.I_Imm[11:0]
+(4)top.core0.I_Imm[11:0]
+(5)top.core0.I_Imm[11:0]
+(6)top.core0.I_Imm[11:0]
+(7)top.core0.I_Imm[11:0]
+(8)top.core0.I_Imm[11:0]
+(9)top.core0.I_Imm[11:0]
+(10)top.core0.I_Imm[11:0]
+(11)top.core0.I_Imm[11:0]
+@1401201
+-group_end
+@28
+top.core0.funct3[2:0]
+@22
+top.core0.temp[7:0]
+top.core0.Sum[31:0]
 @28
 top.core0.Done
 [pattern_trace] 1

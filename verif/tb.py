@@ -28,7 +28,7 @@ async def proc_simple_test(dut):
     #for i in range(len(loadtest)):
     #    dut.mem0.my_mem[i] = loadtest[i]
     
-    f = open("test.txt", "r")
+    f = open("../Assembler/MCode.mc", "r")
     lines = f.readlines()
 
     j = 0

@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
-[*] Thu Oct 31 22:29:18 2024
+[*] Sat Nov  2 01:57:45 2024
 [*]
 [dumpfile] "/home/chk/Documents/riskproc/verif/dump.vcd"
-[dumpfile_mtime] "Thu Oct 31 22:28:51 2024"
-[dumpfile_size] 34667
+[dumpfile_mtime] "Sat Nov  2 01:55:58 2024"
+[dumpfile_size] 32767
 [savefile] "/home/chk/Documents/riskproc/verif/default_signals.gtkw"
-[timestart] 11828000
+[timestart] 2689000
 [size] 966 743
 [pos] 4 601
-*-20.700001 13350000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-18.300001 2955000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [sst_width] 209
 [signals_width] 150
@@ -17,9 +17,8 @@
 [sst_vpaned_height] 357
 @22
 top.core0.din[31:0]
-@29
-top.core0.width[1:0]
 @28
+top.core0.width[1:0]
 top.core0.din_in
 top.core0.clk
 top.core0.run
@@ -32,40 +31,30 @@ top.core0.W
 top.core0.IR[31:0]
 top.core0.r0[31:0]
 top.core0.r1[31:0]
+top.core0.opcode[7:0]
 top.core0.r2[31:0]
 top.core0.r3[31:0]
 top.core0.r4[31:0]
 top.core0.r5[31:0]
 top.core0.r6[31:0]
 top.core0.r7[31:0]
-top.core0.r8[31:0]
-top.core0.r9[31:0]
-top.core0.r10[31:0]
 top.core0.Sum[31:0]
 top.core0.BusWires1[31:0]
 top.core0.BusWires2[31:0]
-@c00022
-top.core0.I_Imm[11:0]
-@28
-(0)top.core0.I_Imm[11:0]
-(1)top.core0.I_Imm[11:0]
-(2)top.core0.I_Imm[11:0]
-(3)top.core0.I_Imm[11:0]
-(4)top.core0.I_Imm[11:0]
-(5)top.core0.I_Imm[11:0]
-(6)top.core0.I_Imm[11:0]
-(7)top.core0.I_Imm[11:0]
-(8)top.core0.I_Imm[11:0]
-(9)top.core0.I_Imm[11:0]
-(10)top.core0.I_Imm[11:0]
-(11)top.core0.I_Imm[11:0]
-@1401200
--group_end
 @28
 top.core0.funct3[2:0]
 @22
 top.core0.Sum[31:0]
 @28
 top.core0.Done
+top.core0.Tstep_Q[2:0]
+@22
+top.core0.rd[4:0]
+top.core0.PCSrc[31:0]
+top.core0.B_Imm[11:0]
+@28
+top.core0.Z
+@29
+top.core0.F_in
 [pattern_trace] 1
 [pattern_trace] 0

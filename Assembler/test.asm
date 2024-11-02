@@ -1,27 +1,7 @@
-lw x1, 24(x0)
-lw x1, 25(x0)
-lw x1, 26(x0)
-lh x1, 27(x0)
-lh x1, 28(x0)
-lh x1, 29(x0)
-lb x1, 30(x0)
-lb x1, 31(x0)
-lb x1, 32(x0)
-lb x1, 31(x0)
-lbu x1, 33(x0)
-lbu x1, 34(x0)
-lbu x1, 35(x0)
-lhu x1, 36(x0)
-lhu x1, 37(x0)
-lhu x1, 38(x0)
-addi x1, x0, 1
-sub x1, x0, x1
-sw x1, 39(x0)
-sw x1, 40(x0)
-sw x1, 41(x0)
-sh x1, 42(x0)
-sh x1, 43(x0)
-sh x1, 44(x0)
-sb x1, 45(x0)
-sb x1, 46(x0)
-sb x1, 47(x0)
+START: addi x2, x0, 1
+addi x3, x0, 2
+addi x4,x0, 3
+addi x5,x0, 4
+blt x3, x2, START
+sub x3, x3, x2
+blt x3, x5, START

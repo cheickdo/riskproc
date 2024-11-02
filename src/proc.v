@@ -9,7 +9,7 @@ module proc (
 );
 
   wire [31:0] R_in;  // r0, ..., r7 register enables
-  reg rs1_in, rs2_in, rd_in, IR_in, ADDR_in, Done, dout_in, load, din_in, G_in, F_in, AddSub, Arith, zero_extend;
+  reg rs1_in, rs2_in, rd_in, IR_in, ADDR_in, Done, dout_in, load, din_in, G_in, F_in, AddSub, Arith, zero_extend, branch;
   reg [1:0] width;
   reg [2:0] Tstep_Q, Tstep_D;
   reg signed [31:0] BusWires1;
@@ -25,7 +25,9 @@ module proc (
   wire [2:0] funct3;
   wire [7:0] opcode, funct7;
   wire [4:0] rs1, rd, rs2;  // instruction opcode and register operands
-  reg [11:0] I_Imm, S_Imm;
+  reg [11:0] I_Imm, S_Imm, B_Imm;
+  reg [9:0] J_Imm; //Not sure if this width is correct
+  reg [19:0] U_Imm; //Not sure if this width is correct
   wire [31:0] r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11,
     r12, r13, r14, r15, r16, r17, r18, r19, r20, r21, r22, r23, r24, r25, r26, r27, r28
     , r29, r30, r31, pc, A;
@@ -50,6 +52,9 @@ module proc (
   assign funct7 = IR[31:25];
   assign I_Imm = IR[31:20];
   assign S_Imm = {IR[31:25], IR[11:7]};
+  assign B_Imm = {IR[31],IR[31], IR[31], IR[7], IR[30:25], IR[11:9]}; //word addressable but instructions assume byte addressability so logic is done here
+  assign J_Imm = {IR[31:22]};
+  assign U_Imm = {IR[31:12]};
 
   dec3to8 decX (
       .En(rd_in),
@@ -89,7 +94,7 @@ module proc (
 
 
   parameter R_type = 7'b0110011, I_type_1=7'b0000011, I_type_2 = 7'b0010011;
-  parameter SB_type = 7'b1100111, S_type = 7'b0100011, U_type = 7'b0110111, UJ_type=7'b1101111;
+  parameter SB_type = 7'b1100111, S_type = 7'b0100011, U_type = 7'b0110111, UJ_type=7'b1101111, U2_type = 7'b0010111, B_type = 7'b1100011;
 
   //arithmetic instruction funct3
   parameter SLL = 3'b001, XOR = 3'b100, SRL = 3'b101, SRA = 3'b101, OR = 3'b110, AND = 3'b111, SLT = 3'b010, SLTU = 3'b011;
@@ -97,13 +102,16 @@ module proc (
   //Load types
   parameter LB = 3'b000, LH = 3'b001, LW = 3'b010, LBU = 3'b100, LBHU = 3'b101;
 
+  //conditional branches
+  parameter beq = 3'b000, bne = 3'b001, blt = 3'b100, bge = 3'b101, bltu = 3'b110, bgeu = 3'b111;
+
   // selectors for the BusWires multiplexer
-  parameter _R0 = 5'b00000, _R1 = 5'b00001, _R2 = 5'b00010, _R3 = 5'b00011, _R4 = 5'b00100, 
-        _R5 = 5'b00101, _R6 = 5'b00110, _R7 = 5'b00111, _R8 = 5'b01000,  _R9 = 5'b01001,  _R10 = 5'b01010,  _R11 = 5'b01011,
-         _R12 = 5'b01100,  _R13 = 5'b01101,  _R14 = 5'b01110,  _R15 = 5'b01111,  _R16 = 5'b10000,
-          _R17 = 5'b10001,  _R18 = 5'b10010,  _R19 = 5'b10011,  _R20 = 5'b10100,  _R21 = 5'b10101,
-           _R22 = 5'b10110,  _R23 = 5'b10111,  _R24 = 5'b11000,  _R25 = 5'b11001,  _R26 = 5'b11010,
-            _R27 = 5'b11011,  _R28 = 5'b11100,  _R29 = 5'b11101,  _R30 = 5'b11110,  _R31 = 5'b11111;
+  parameter _R0 = 6'b000000, _R1 = 6'b000001, _R2 = 6'b000010, _R3 = 6'b000011, _R4 = 6'b000100, 
+        _R5 = 6'b000101, _R6 = 6'b000110, _R7 = 6'b000111, _R8 = 6'b001000,  _R9 = 6'b001001,  _R10 = 6'b001010,  _R11 = 6'b001011,
+         _R12 = 6'b001100,  _R13 = 6'b001101,  _R14 = 6'b001110,  _R15 = 6'b001111,  _R16 = 6'b010000,
+          _R17 = 6'b010001,  _R18 = 6'b010010,  _R19 = 6'b010011,  _R20 = 6'b010100,  _R21 = 6'b010101,
+           _R22 = 6'b010110,  _R23 = 6'b010111,  _R24 = 6'b011000,  _R25 = 6'b011001,  _R26 = 6'b011010,
+            _R27 = 6'b011011,  _R28 = 6'b011100,  _R29 = 6'b011101,  _R30 = 6'b011110,  _R31 = 6'b011111, _PC = 6'b100000;
 
   // Control FSM outputs
   always @(*) begin  // Output Logic
@@ -117,8 +125,8 @@ module proc (
     IR_in     = 1'b0;
     dout_in   = 1'b0;
     ADDR_in   = 1'b0;
-    Select1    = 5'bxxxxx;
-    Select2 = 5'bxxxxx;
+    Select1    = 6'bxxxxx;
+    Select2 = 6'bxxxxx;
     Arith = 1'b0;
     AddSub    = 1'b0;
     Imm = 1'b0;
@@ -129,6 +137,7 @@ module proc (
     pc_incr   = 1'b0;
     sp_incr   = 1'b0;
     sp_decr   = 1'b0;
+    branch = 1'b0;
     load = 1'b0;
     zero_extend = 1'b0;
     width = 2'b00;
@@ -148,8 +157,8 @@ module proc (
       exec:  // execute instruction
       case (opcode)
         R_type: begin
-          Select1 = rs1;
-          Select2 = rs2;
+          Select1 = {2'b0, rs1[4:0]};
+          Select2 = {2'b0, rs2[4:0]};
           G_in = 1'b1;
 
           case (funct3)
@@ -165,13 +174,13 @@ module proc (
 
         I_type_1: begin
               Imm = 1'b1;
-              Select1 = rs1;
+              Select1 = {2'b0, rs1[4:0]};
               G_in = 1'b1;
               //din_in = 1'b1; //new change
         end
         
         I_type_2: begin
-          Select1 = rs1;
+          Select1 = {2'b0, rs1[4:0]};
           Imm = 1'b1;
           G_in = 1'b1;
           case (funct3)
@@ -185,9 +194,45 @@ module proc (
         end
 
         S_type: begin //store 
-              Select1 = rs2;
+          Select1 = {2'b0, rs2[4:0]};
+          Select2 = _R0;
+          dout_in = 1'b1;
+        end
+
+        UJ_type: begin
+          Select1 = _PC;
+          Select2 = _R0;
+          G_in = 1'b1;
+        end
+
+        SB_type: begin
+          case (funct3) 
+            0: begin
+              Select1 = _PC;
               Select2 = _R0;
-              dout_in = 1'b1;
+              G_in = 1'b1;
+            end
+          endcase
+        end
+
+        U_type: begin //Load Upper Imm
+          Select1 = _R0;
+          Imm = 1'b1;
+          G_in = 1'b1;
+        end
+
+        U2_type: begin //Load Upper Imm
+          Select1 = _R0;
+          Imm = 1'b1;
+          G_in = 1'b1;
+        end
+
+        B_type: begin //conditional branches, do a subtraction and check the value
+          Select1 = {2'b0, rs1[4:0]};
+          Select2 = {2'b0, rs2[4:0]};
+          F_in = 1'b1;
+          //G_in = 1'b1;
+          AddSub = 1'b1;
         end
         default: ;
       endcase
@@ -227,9 +272,81 @@ module proc (
 
         S_type: begin //store
               Imm = 1'b1;
-              Select1 = rs1;
+              Select1 = {2'b0, rs1[4:0]};
               G_in = 1'b1;
               W_D = 1'b1;
+        end
+        
+        UJ_type: begin //breaking my standard here, writing back in this cycle
+          //branch = 1'b1;
+          rd_in = 1'b1;
+          Select1 = _PC;
+          Imm = 1'b1;
+          G_in = 1'b1;
+        end
+
+        SB_type: begin //breaking my standard here, writing back in this cycle
+          //branch = 1'b1;
+          rd_in = 1'b1;
+          Select1 = rs1;
+          Imm = 1'b1;
+          G_in = 1'b1;
+        end
+
+        U_type: begin //Load Upper Imm
+          rd_in = 1'b1;
+        end
+
+        U2_type: begin //Load Upper Imm
+          rd_in = 1'b1;
+        end
+
+        B_type: begin //conditional branches, check value type
+          case (funct3)
+            beq: begin 
+              if (Z == 1) begin
+                Select1 = _PC;
+                Imm = 1'b1;
+                G_in = 1'b1;
+              end
+            end
+            bne: begin 
+              if (Z == 0) begin
+                Select1 = _PC;
+                Imm = 1'b1;
+                G_in = 1'b1;
+              end
+            end
+            blt: begin 
+              if (N == 1) begin
+                Select1 = _PC;
+                Imm = 1'b1;
+                G_in = 1'b1;
+              end
+            end
+            bge: begin 
+              if (N == 0) begin
+                Select1 = _PC;
+                Imm = 1'b1;
+                G_in = 1'b1;
+              end
+            end
+            bltu: begin 
+              if (N == 1) begin
+                Select1 = _PC;
+                Imm = 1'b1;
+                G_in = 1'b1;
+              end
+            end
+            bgeu: begin 
+              if (N == 0) begin
+                Select1 = _PC;
+                Imm = 1'b1;
+                G_in = 1'b1;
+              end
+            end
+            default: ;
+          endcase
         end
         default: ;
       endcase
@@ -264,7 +381,74 @@ module proc (
             load = 1'b1;
             Done = 1'b1; 
       end
+        
+      UJ_type: begin //Jump and Link
+        pc_in = 1'b1;
+        branch = 1'b1;
+        Done = 1'b1;
+      end
 
+      SB_type: begin //Jump and Link Reg
+        pc_in = 1'b1;
+        branch = 1'b1;
+        Done = 1'b1;
+      end
+
+        U_type: begin //Load Upper Imm
+          Done = 1'b1;
+        end
+
+        U2_type: begin //Load Upper Imm
+          Done = 1'b1;
+        end
+
+        B_type: begin //conditional branches
+          case (funct3)
+            beq: begin 
+              if (Z == 1) begin
+                pc_in = 1'b1;
+                branch = 1'b1;
+                Done = 1'b1;
+              end
+            end
+            bne: begin 
+              if (Z == 0) begin
+                pc_in = 1'b1;
+                branch = 1'b1;
+                Done = 1'b1;
+              end
+            end
+            blt: begin 
+              if (N == 1) begin
+                pc_in = 1'b1;
+                branch = 1'b1;
+                Done = 1'b1;
+              end
+            end
+            bge: begin 
+              if (N == 0) begin
+                pc_in = 1'b1;
+                branch = 1'b1;
+                Done = 1'b1;
+              end
+            end
+            bltu: begin 
+              if (N == 1) begin
+                pc_in = 1'b1;
+                branch = 1'b1;
+                Done = 1'b1;
+              end
+            end
+            bgeu: begin 
+              if (N == 0) begin
+                pc_in = 1'b1;
+                branch = 1'b1;
+                Done = 1'b1;
+              end
+            end
+            default: ;
+          endcase
+        end
       default: ;
     endcase
     endcase
@@ -367,9 +551,10 @@ module proc (
   wire [1:0] shift_type;
   assign shift_type = IR[6:5];
 
-  //pc logic unit, add branch functionality by having ALU operations and a mux
+  //pc logic unit, add branch functionality by having ALU operations and a mux, loads in either from pc or sum
   always @(*)
-    PCSrc = pc + 4;
+    if (branch) PCSrc = G; 
+    else PCSrc = pc + 1;
 
   always@(*)
     case(width)
@@ -419,7 +604,15 @@ module proc (
         AND: {ALU_Cout, Sum_full} = BusWires1 & BusWires2;
       endcase
     else if (AddSub) {ALU_Cout, Sum_full} = BusWires1 + ~BusWires2 + 32'b1; //sub
+    else if (opcode == U_type) begin //don't like this, TODO change into acceptable form
+      {ALU_Cout, Sum_full} = {{BusWires2[19]},BusWires2 << 12};
+    end
+    else if (opcode == U2_type) begin //don't like this, TODO change into acceptable form
+      {ALU_Cout, Sum_full} = (BusWires2 << 12) + pc-1;
+    end
     else {ALU_Cout, Sum_full} = BusWires1 + BusWires2; //add
+
+
 
   regn reg_G (
       .D(Sum),
@@ -429,7 +622,7 @@ module proc (
       .Q(G)
   );
 
-  // define the internal processor bus
+  // define the internal processor bus #TODO add G as a select signal
   always @(*)
     case (Select1)
       _R0: BusWires1 = r0;
@@ -464,15 +657,25 @@ module proc (
       _R29: BusWires1 = r29;
       _R30: BusWires1 = r30;
       _R31: BusWires1 = r31;
+      _PC: BusWires1 = pc-1; //pc has been incremented we want to select the old one (will have to change in pipelined)
+      //_G: BusWires1
       default: BusWires1 = 32'bx;
     endcase
 
     always @(*)
     if (Imm) begin
       case (opcode) 
-        I_type_1: BusWires2 = {21'b0,I_Imm};
+        I_type_1: BusWires2 = {21'b0,I_Imm}; //TODO might want to sign extend this
         I_type_2: BusWires2 = {21'b0,I_Imm};
         S_type: BusWires2 = {21'b0, S_Imm};
+        UJ_type: BusWires2 = {{23{J_Imm[9]}},J_Imm};
+        SB_type: BusWires2 = {{21{I_Imm}},I_Imm};
+        U_type: BusWires2 = {{12{U_Imm}},U_Imm};
+        U2_type: BusWires2 = {{12{U_Imm}},U_Imm};
+        B_type: begin
+          if ((funct3 == 3'b110) | (funct3 == 3'b111)) BusWires2 = {21'b0, B_Imm};
+          else BusWires2 = {{21{B_Imm[11]}}, B_Imm};
+        end
         default: ;
       endcase
 

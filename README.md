@@ -26,4 +26,5 @@ implement rem
 implement remu
 
 for RV32F support
-tbc
+
+Speculative, Out of Order dynamic pipeline

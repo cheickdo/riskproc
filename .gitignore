@@ -78,5 +78,6 @@ bin
 include
 lib
 lib64
+DE1SOC
 sim_build
 __pycache__

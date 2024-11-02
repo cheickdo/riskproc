@@ -25,9 +25,9 @@ module proc (
   wire [2:0] funct3;
   wire [7:0] opcode, funct7;
   wire [4:0] rs1, rd, rs2;  // instruction opcode and register operands
-  reg [11:0] I_Imm, S_Imm, B_Imm;
-  reg [9:0] J_Imm; //Not sure if this width is correct
-  reg [19:0] U_Imm; //Not sure if this width is correct
+  wire [11:0] I_Imm, S_Imm, B_Imm;
+  wire [9:0] J_Imm; //Not sure if this width is correct
+  wire [19:0] U_Imm; //Not sure if this width is correct
   wire [31:0] r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11,
     r12, r13, r14, r15, r16, r17, r18, r19, r20, r21, r22, r23, r24, r25, r26, r27, r28
     , r29, r30, r31, pc, A;

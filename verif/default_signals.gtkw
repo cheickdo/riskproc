@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
-[*] Sat Nov  2 01:57:45 2024
+[*] Sun Nov  3 19:13:17 2024
 [*]
 [dumpfile] "/home/chk/Documents/riskproc/verif/dump.vcd"
-[dumpfile_mtime] "Sat Nov  2 01:55:58 2024"
-[dumpfile_size] 32767
+[dumpfile_mtime] "Sun Nov  3 19:13:03 2024"
+[dumpfile_size] 21475
 [savefile] "/home/chk/Documents/riskproc/verif/default_signals.gtkw"
-[timestart] 2689000
+[timestart] 177000
 [size] 966 743
 [pos] 4 601
-*-18.300001 2955000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-20.400002 1150000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [sst_width] 209
 [signals_width] 150

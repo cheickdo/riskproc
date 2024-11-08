@@ -49,6 +49,7 @@
 *.idb
 *.pdb
 *.bak
+*.code-workspace
 
 # Quartus files
 *.qsf

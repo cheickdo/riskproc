@@ -1,0 +1,3 @@
+[submodule "RISCVAssembly_To_MIF"]
+	path = RISCVAssembly_To_MIF
+	url = https://github.com/cheickdo/RISCVAssembly_To_MIF

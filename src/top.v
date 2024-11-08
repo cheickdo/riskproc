@@ -3,7 +3,10 @@
 module top(/*AUTOARG*/
 	input [9:0] SW,
 	input [3:0] KEY,
-	output [9:0] LEDR
+	input CLOCK_50,
+	output [9:0] LEDR,
+	input clk,
+	input run
 );
 
     /*AUTOWIRE*/
@@ -12,10 +15,28 @@ module top(/*AUTOARG*/
     wire [31:0]		din;			// From mem0 of memory.v
     wire [31:0]		dout;			// From core0 of proc.v
     wire [31:0]		realaddr;		// From core0 of proc.v
+	 wire [31:0] waste;
+	 wire [31:0] ina;
+	 wire [21:0] temp;
+	 reg [31:0] temp2;
     // End of automatics
+	 
+	 RAM	RAM_inst (
+	.address ( realaddr[15:0] ),
+	.clock ( CLOCK_50 ),
+	.data ( dout ),
+	.wren ( W),
+	.q ( din )
+	);
+	
+	always@(*)
+		if ((W == 1) & (realaddr == 16'b0000000000001111)) temp2 = dout;
+		
+	assign LEDR = temp2[9:0];
+	
+	
 
-
-	part1 u0(.MuxSelect(SW[9:7]), .Input(SW[6:0]), .Out(LEDR[0]));
+	//part1 u0(.MuxSelect(SW[9:7]), .Input(SW[6:0]), .Out(LEDR[0]));
 
     proc core0 (/*AUTOINST*/
 		// Outputs
@@ -24,18 +45,18 @@ module top(/*AUTOARG*/
 		.W			(W),
 		// Inputs
 		.din			(din[31:0]),
-		.resetn			(resetn),
-		.clk			(clk),
-		.run			(run));
+		.resetn			(SW[1]),
+		.clk			(KEY[0]),
+		.run			(SW[0]));
 
     //memory mem0(/*AUTOINST*/
-		// Outputs
-	//	.din			(din[31:0]),
-		// Inputs
-	//	.clk			(clk),
-	//	.W			(W),
-	//	.realaddr		(realaddr[15:0]),
-	//	.dout			(dout[31:0]));
+		 //Outputs
+		//.din			(din[31:0]),
+		 //Inputs
+		//.clk			(clk),
+		//.W			(W),
+		//.realaddr		(realaddr[15:0]),
+		//.dout			(dout[31:0]));
     
 endmodule
 

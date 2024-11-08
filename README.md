@@ -5,17 +5,14 @@ The implementation is word addressable meaning that load and store for half word
 
 TODO:
 
-Connect keyboard and VGA peripherals
+**Connect keyboard and VGA peripherals**
 
-Add pipelining
-
-Add interrupts
+**Add exceptions**
 
 implement ecall
 implement ebreak
 
-
-for RV32A support
+**for RV32A support**
 imlpement mul
 implement mulh
 implement mulsu
@@ -25,6 +22,8 @@ implement divu
 implement rem
 implement remu
 
-for RV32F support
+**for RV32F support**
+
+**Add dynamic pipelining (OoO execution)**
 
 Speculative, Out of Order dynamic pipeline

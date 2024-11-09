@@ -6,8 +6,11 @@ module csr(
     input write_en,
     output reg [31:0] csr_readbus
 );
-    reg [31:0] csreg [11:0];
     parameter XLEN = 32;
+
+    reg [63:0] mtime;
+    reg [63:0] mtimecmp; //not a csr, implement own memory mapping
+    reg [31:0] csreg [11:0];
 
     initial begin
       $dumpfile("dump.vcd");
@@ -18,6 +21,9 @@ module csr(
     always@(*) begin
         csr_readbus = csreg[csr_addr]; //only should be allowed given privilege mode of process TODO
     end
+
+    //assign csreg['hF01] = mtime;
+    //assign csreg['hF81] = mtimeh;
 
     always@(posedge clk)
         if (!resetn) begin //initializations of csr registers
@@ -35,10 +41,13 @@ module csr(
             csreg['h304]  <= 32'b00000000000000000000000000000000;//mie
             csreg['h305]  <= 32'b00000000000000000000000000000000;//mtvec
 
+
+            //question marks here
             csreg['h340]  <= 32'b00000000000000000000000000000000;//mscratch
             csreg['h341]  <= 32'b00000000000000000000000000000000;//mepc
             csreg['h342]  <= 32'b00000000000000000000000000000000;//mcause
             csreg['h343]  <= 32'b00000000000000000000000000000000;//mbadaddr
+            
             csreg['h344]  <= 32'b00000000000000000000000000000000;//mip
 
             csreg['h380]  <= 32'b00000000000000000000000000000000;//mbase
@@ -50,6 +59,8 @@ module csr(
 
             csreg['hF00]  <= 32'b00000000000000000000000000000000;//mcycle
             csreg['hF01]  <= 32'b00000000000000000000000000000000;//mtime
+            mtimecmp <= 0;
+
             csreg['hF02]  <= 32'b00000000000000000000000000000000;//minstret
             csreg['hF80]  <= 32'b00000000000000000000000000000000;//mcycleh
             csreg['hF81]  <= 32'b00000000000000000000000000000000;//mtimeh
@@ -87,7 +98,12 @@ module csr(
         else if (write_en)
             case(csr_addr)
                 'h300: csreg['300] <= data_in; //mstatus
+                'h302: csreg['h302] <= data_in; //medeleg
+                'h303: csreg['h303] <= data_in; //mideleg
                 'h305: csreg['h305] <= data_in & 'hFFFC;// mvtec
+                
+                'h304: csreg['h305] <= data_in; //mie
+                'h344: csreg['h344] <= data_in; //mip
 
                 default: ;//raise some exception, illegal write
             endcase

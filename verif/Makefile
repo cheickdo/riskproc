@@ -5,7 +5,7 @@
 SIM ?= icarus
 TOPLEVEL_LANG ?= verilog
 
-VERILOG_SOURCES += $(PWD)/../src/proc.v $(PWD)/../src/regn.v $(PWD)/../src/top.v $(PWD)/../src/memory.v $(PWD)/../src/regarray.v
+VERILOG_SOURCES += $(PWD)/../src/proc.v $(PWD)/../src/regn.v $(PWD)/../src/top.v $(PWD)/../src/memory.v $(PWD)/../src/regarray.v $(PWD)/../src/csr.v
 
 TOPLEVEL = top
 

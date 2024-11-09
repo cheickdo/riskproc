@@ -728,6 +728,14 @@ module proc (
       .Q({C, N, Z})
   );
 
+  csr csr_inst(
+    .clk(clk),
+    .resetn(resetn),
+    .csr_addr(0),
+    .data_in(0),
+    .csr_readbus()
+  );
+
   // Dump waves
   initial begin
       $dumpfile("dump.vcd");

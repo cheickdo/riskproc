@@ -4,18 +4,20 @@ module csr(
     input [11:0] csr_addr,
     input [31:0] data_in,
     input write_en,
+    input done,
+    input scratch,
     output reg [31:0] csr_readbus
 );
     parameter XLEN = 32;
 
     reg [63:0] mtime;
     reg [63:0] mtimecmp; //not a csr, implement own memory mapping
-    reg [31:0] csreg [11:0];
+    reg [4095:0][31:0] csreg; //too many registers, ends up breaking, implement my own register map set
 
-    initial begin
-      $dumpfile("dump.vcd");
-      $dumpvars(2, csr);
-    end
+
+    //TODO timer implementation and wiring
+
+    //TODO interrupt and exception handler
 
     //decoder for reading
     always@(*) begin
@@ -26,8 +28,11 @@ module csr(
     //assign csreg['hF81] = mtimeh;
 
     always@(posedge clk)
-        if (!resetn) begin //initializations of csr registers
+
+        /*
+        if (!resetn) begin //initializations of csr registers, this should not exist!
             //Machine information registers, machine READONLY
+            csreg[0] <= 0;
             csreg['hF10]  <= 32'b10000000000100000000000100000000;//misa register
             csreg['hF11]  <= 32'b00000000000000000000000000000000;//mvendorid, non-commercial device
             csreg['hF12]  <= 32'b00000000000000000000000000000000;//marchid
@@ -95,17 +100,40 @@ module csr(
             csreg['h78A]  <= 32'b00000000000000000000000000000000;//upper 32bits of hinstret delta
 
         end
-        else if (write_en)
+        
+        else begin
+            {csreg['hF80],csreg['hF00]} <= {csreg['hF80],csreg['hF00]} + 1; //cycle counter
+            if (done == 1) {csreg['hF02],csreg['hF82]} <= {csreg['hF02],csreg['hF82]} + 1;//retired counter, use the done signal
+            
+            if (write_en)
+            if (scratch == 1'b1) csreg['h340] <= data_in;
+            else begin
             case(csr_addr)
-                'h300: csreg['300] <= data_in; //mstatus
+                'h300: csreg['h300] <= data_in; //mstatus
                 'h302: csreg['h302] <= data_in; //medeleg
                 'h303: csreg['h303] <= data_in; //mideleg
                 'h305: csreg['h305] <= data_in & 'hFFFC;// mvtec
                 
                 'h304: csreg['h305] <= data_in; //mie
                 'h344: csreg['h344] <= data_in; //mip
+                'h310: csreg['h310] <= data_in; //mucounteren
+                'h341: csreg['h341] <= data_in & 'hFFFC; //mepc
+                'h342: csreg['h342] <= data_in; //mcause
+                'h343: csreg['h343] <= data_in; //mbaddr
+
+                //deltas hardwired to 0
+                
 
                 default: ;//raise some exception, illegal write
             endcase
+            end
+        end
+        */
             //csreg['hF15] <= data_in; //check privilege mode to ensure proper write
+
+
+    initial begin
+      $dumpfile("dump.vcd");
+      $dumpvars(1, csr);
+    end
 endmodule

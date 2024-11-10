@@ -16,15 +16,19 @@ module top(/*AUTOARG*/
     wire [31:0]		din;			// From mem0 of memory.v
     wire [31:0]		dout;			// From core0 of proc.v
     wire [31:0]		realaddr;		// From core0 of proc.v
-	 wire [31:0] waste;
-	 wire [31:0] ina;
-	 wire [21:0] temp;
-	 reg [31:0] temp2;
+	wire [31:0] waste;
+	wire [31:0] ina;
+	wire [21:0] temp;
+	reg [31:0] temp2;
+
+	wire [31:0] word_addr;
+
+	assign word_addr = realaddr >> 2;
     // End of automatics
 	 
 	 /*
 	 RAM	RAM_inst (
-	.address ( realaddr[15:0] ),
+	.address ( word_addr[15:0] ),
 	.clock ( CLOCK_50 ),
 	.data ( dout ),
 	.wren ( W),
@@ -32,7 +36,7 @@ module top(/*AUTOARG*/
 	);*/
 	
 	always@(*)
-		if ((W == 1) & (realaddr == 16'b0000000000001111)) temp2 = dout;
+		if ((W == 1) & (word_addr == 16'b0000000000001111)) temp2 = dout;
 		
 	assign LEDR = temp2[9:0];
 	
@@ -44,7 +48,7 @@ module top(/*AUTOARG*/
     proc core0 ( //testing core
 		// Outputs
 		.dout			(dout[31:0]),
-		.realaddr		(realaddr[31:0]),
+		.realaddr		(word_addr[31:0]),
 		.W			(W),
 		// Inputs
 		.din			(din[31:0]),
@@ -71,7 +75,7 @@ module top(/*AUTOARG*/
 		 //Inputs
 		.clk			(clk),
 		.W			(W),
-		.realaddr		(realaddr[15:0]),
+		.realaddr		(word_addr[15:0]),
 		.dout			(dout[31:0]));
     
 endmodule

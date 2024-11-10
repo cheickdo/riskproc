@@ -527,8 +527,8 @@ module proc (
       .Q(ADDR)
   ); //check load, if yes, ADDR <-
 
-  always@(*)
-    if (load) realaddr = G;
+  always@(*) //memory being tested is word addressable and the convertion is being don in the 
+    if (load) realaddr = (G);
     else realaddr = ADDR;
 
   regn reg_IR (
@@ -554,7 +554,7 @@ module proc (
   //pc logic unit, add branch functionality by having ALU operations and a mux, loads in either from pc or sum
   always @(*)
     if (branch) PCSrc = G; 
-    else PCSrc = pc + 1;
+    else PCSrc = pc + 4;
 
   always@(*)
     case(width)
@@ -608,7 +608,7 @@ module proc (
       {ALU_Cout, Sum_full} = {{BusWires2[19]},BusWires2 << 12};
     end
     else if (opcode == U2_type) begin //don't like this, TODO change into acceptable form
-      {ALU_Cout, Sum_full} = (BusWires2 << 12) + pc-1;
+      {ALU_Cout, Sum_full} = (BusWires2 << 12) + pc-4;
     end
     else {ALU_Cout, Sum_full} = BusWires1 + BusWires2; //add
 
@@ -657,7 +657,7 @@ module proc (
       _R29: BusWires1 = r29;
       _R30: BusWires1 = r30;
       _R31: BusWires1 = r31;
-      _PC: BusWires1 = pc-1; //pc has been incremented we want to select the old one (will have to change in pipelined)
+      _PC: BusWires1 = pc-4; //pc has been incremented we want to select the old one (will have to change in pipelined)
       //_G: BusWires1
       default: BusWires1 = 32'bx;
     endcase
@@ -731,8 +731,9 @@ module proc (
   csr csr_inst(
     .clk(clk),
     .resetn(resetn),
-    .csr_addr(0),
+    .csr_addr(12'b0),
     .data_in(0),
+    .done(done),
     .csr_readbus()
   );
 
@@ -754,7 +755,7 @@ module pc_count (
   always @(posedge clk)
     if (!resetn) Q <= 16'b0;
     else if (PLoad) Q <= D;
-    else if (En) Q <= Q + 1'b1;
+    else if (En) Q <= Q + 'h4;
 endmodule
 
 module sp_count (  // sync. up/down counter w/ parallel load & active-low reset
@@ -769,8 +770,8 @@ module sp_count (  // sync. up/down counter w/ parallel load & active-low reset
   always @(posedge clk)
     if (!resetn) Q <= 32'b0;
     else if (PLoad) Q <= D;
-    else if (Up) Q <= Q + 1'b1;
-    else if (Down) Q <= Q - 1'b1;
+    else if (Up) Q <= Q + 'h4;
+    else if (Down) Q <= Q - 'h4;
 endmodule
 
 module dec3to8 (

@@ -9,15 +9,19 @@ The implementation is byte addressable, load and store for half words and bytes 
 
 
 TODO:
+**Add exceptions & interrupts**
 
-**Connect keyboard and VGA peripherals**
+| Interrupt   | Exception Code |Description |    
+|:-------|:--------|:----------|
+|0|0|instruction address misaligned|
+|0|2|illegal instruction|
+|0|4|load address misaligned|
+|0|5|store address misaligned|
 
-**Add exceptions**
-
-implement ecall
-implement ebreak
 
 **Add interrupts**
+
+**Connect keyboard and VGA peripherals**
 
 **for RV32A support**
 imlpement mul

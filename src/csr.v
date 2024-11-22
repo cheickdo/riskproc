@@ -6,6 +6,12 @@ module csr(
     input write_en,
     input done,
     input scratch,
+    output [31:0] mstatus,
+    output [31:0] mie,
+    output [31:0] mip,
+    output [31:0] mcause,
+    input [31:0] mbadaddr,
+    input [31:0] mepc,
     output reg [31:0] csr_readbus
 );
     parameter XLEN = 32;
@@ -18,6 +24,13 @@ module csr(
     wire [23:0] type = csr_addr[31:8];
     wire [7:0] select = csr_addr[7:0];
 
+    assign mstatus = csreg['h5];
+    assign mie = csreg['h8];
+    assign mip = csreg['hE];
+    assign mcause = csreg['hC];
+    //assign mbadaddr = csreg['hD];
+    assign csreg['hD] = mbadaddr;
+    assign csreg['hB] = mepc;
     //TODO timer implementation and wiring
 
     //TODO interrupt and exception handler
@@ -45,21 +58,21 @@ module csr(
         if (write_en) begin //write enabled
             //if (scratch == 1'b1) csreg['h340] <= data_in;
             case(type)
-            24'h30: begin
-                csreg[select+'h5] <= data_in;
-            end
-            24'h34: begin
-                csreg[select+'hA] <= data_in;
-            end
-            24'h31: begin
-                csreg[select+'h15] <= data_in;
-            end
-            24'h70: begin 
-                csreg[select+'h18] <= data_in;
-            end
-            24'h78: begin 
-                csreg[select+'h21] <= data_in;
-            end
+                24'h30: begin
+                    csreg[select+'h5] <= data_in;
+                end
+                24'h34: begin
+                    csreg[select+'hA] <= data_in;
+                end
+                24'h31: begin
+                    csreg[select+'h15] <= data_in;
+                end
+                24'h70: begin 
+                    csreg[select+'h18] <= data_in;
+                end
+                24'h78: begin 
+                    csreg[select+'h21] <= data_in;
+                end
             default:;
             endcase
 

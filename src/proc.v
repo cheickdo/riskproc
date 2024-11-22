@@ -41,6 +41,14 @@ module proc (
   wire C, N, Z;
   wire [31:0] ADDR;
 
+  //csr wires
+  wire [31:0] mstatus;
+  wire [31:0] mie;
+  wire [31:0] mip;
+  wire [31:0] mepc;
+  wire [31:0] mcause;
+  wire [31:0] mbadaddr;
+
   wire [6:0] Imm_funct = I_Imm[11:5];
   wire [4:0] reduced_Imm = I_Imm[4:0];
 
@@ -734,7 +742,24 @@ module proc (
     .csr_addr(12'b0),
     .data_in(0),
     .done(done),
+    .mstatus(mstatus),
+    .mie(mie),
+    .mip(mip),
+    .mepc(mepc),
+    .mcause(mcause),
+    .mbadaddr(mbadaddr),
     .csr_readbus()
+  );
+
+  interrupt_ctrl interrupt_ctrl_inst(
+    .clk(clk),
+    .pc(pc)
+    .mstatus(mstatus),
+    .mie(mie),
+    .mip(mip),
+    .mcause(mcause),
+    .mbadaddr(mbadaddr)
+    .mepc(mepc)
   );
 
   // Dump waves

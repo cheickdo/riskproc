@@ -21,7 +21,7 @@ WARL: 2'b11
 | 0x303  |0x07| MRW | mideleg | machine interrupt delegation register |
 | 0x304  |0x08| MRW | mie | machine interrupt-enable register |
 | 0x305  |0x09| MRW | mtvec | machine trap-handler base address |
-| 0x340  |0x0A| MRW | mscrtatch | scratch register for machine trap handlers |
+| 0x340  |0x0A| MRW | mscratch | scratch register for machine trap handlers |
 | 0x341  |0x0B| MRW | mepc | machine exception program counter |
 | 0x342  |0x0C| MRW | mcause | machine trap cause |
 | 0x343  |0x0D| MRW | mbadaddr | machine bad address |

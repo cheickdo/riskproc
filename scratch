@@ -1,0 +1,8 @@
+Try trapping with illegal access fault
+
+When trap occurs -> write to mcause, asynchronous trap implemented first
+
+check at end of instruction (Done signal asserted),
+pc <= mtvec
+//stuff
+return from trap instruction 

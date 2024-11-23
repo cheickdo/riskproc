@@ -39,6 +39,7 @@ module proc (
   reg  W_D;  // used for write signal
   reg Imm;
   wire C, N, Z;
+  wire trap;
   wire [31:0] ADDR;
 
   //csr wires
@@ -559,11 +560,15 @@ module proc (
   wire [1:0] shift_type;
   assign shift_type = IR[6:5];
 
-  //pc logic unit, add branch functionality by having ALU operations and a mux, loads in either from pc or sum
+  //pc logic unit
   always @(*)
+  if (!trap) begin
     if (branch) PCSrc = G; 
     else PCSrc = pc + 4;
-
+  end
+  else begin
+    
+  end
   always@(*)
     case(width)
     2'b00: Sum = Sum_full;
@@ -753,13 +758,15 @@ module proc (
 
   interrupt_ctrl interrupt_ctrl_inst(
     .clk(clk),
-    .pc(pc)
+    .pc(pc),
     .mstatus(mstatus),
     .mie(mie),
     .mip(mip),
     .mcause(mcause),
-    .mbadaddr(mbadaddr)
-    .mepc(mepc)
+    .mbadaddr(mbadaddr),
+    .mepc(mepc),
+    .trap(trap),
+    .done(Done)
   );
 
   // Dump waves

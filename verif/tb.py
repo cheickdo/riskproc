@@ -29,7 +29,7 @@ async def proc_simple_test(dut):
     #    dut.mem0.my_mem[i] = loadtest[i]
     
     #f = open("../RISCVAssembly_To_MIF/Assembler/BINARY.mc", "r")
-    f = open("BINARY.mc", "r")
+    f = open("MCode.mc", "r")
 
     lines = f.readlines()
 

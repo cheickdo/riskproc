@@ -8,7 +8,7 @@ module csr(
     input scratch,
     output [31:0] mstatus,
     output [31:0] mie,
-    output [31:0] mip,
+    input [31:0] mip,
     input [31:0] mcause,
     input [31:0] mbadaddr,
     input [31:0] mepc,
@@ -33,7 +33,8 @@ module csr(
 
     assign mstatus = csreg['h5];
     assign mie = csreg['h8];
-    assign mip = csreg['hE];
+    //assign mip = csreg['hE];
+    assign csreg['hE] = mip;
     assign mtvec = csreg['h9];
     assign csreg['hC] = mcause;
     assign csreg['hD] = mbadaddr;

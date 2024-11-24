@@ -1,6 +1,8 @@
 bug if mepc happens at 0, doesn't trap #TODO
 
-- Handle interrupt posting in controller
-- Include vectored trapping through mtvec
-- Include return from trap instructions
+- Handle interrupt posting in controller (To verify)
+- Include vectored trapping through mtvec (make implementation through software)
+- Include return from trap instructions (TODO)
+- implement context switching (TODO)
+- standardize implementation by using an XLEN variable
 

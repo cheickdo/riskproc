@@ -5,7 +5,7 @@ module interrupt_ctrl(
     input [31:0] pc,
     input [31:0] mstatus,
     input [31:0] mie,
-    input [31:0] mip,
+    //input [31:0] mip,
     input [7:0] opcode,
     input W,
     input [31:0] G,
@@ -13,6 +13,7 @@ module interrupt_ctrl(
     input [31:0] Sum,
     input done,
 
+    output reg [31:0] mip,
     output reg [31:0] mcause,
     output reg [31:0] mbadaddr,
     output reg [31:0] mepc,
@@ -21,8 +22,18 @@ module interrupt_ctrl(
     //mepc also handled 1 level above
 
 );
-
+    parameter XLEN = 32;
     parameter S_type = 7'b0100011,I_type_1=7'b0000011;
+
+    //WIRES
+    wire machine_global_ie;
+    wire machine_time_ip;
+    wire machine_time_ie;
+
+    //assignments
+    assign machine_global_ie = mstatus[3];
+    //assign machine_time_ip = mip[7];
+    assign machine_time_ie = mie[7];
 
     always@(posedge clk)
         if ((done == 1) & (mepc != 32'h0)) begin
@@ -49,7 +60,13 @@ module interrupt_ctrl(
             mepc <= pc;
             mbadaddr <= pc;
             mcause <= 5;
-        end       
+        end
+        //else check interrupts
+        else if ((time_compare == 1) & (machine_global_ie & machine_time_ie & (!mip[7]))) begin
+            mcause <= (1<<31) | (32'h7);
+            mepc <= pc;
+            mip[7] <= 1;
+        end
         else begin
             mbadaddr <= 0;
             mepc <= 0;

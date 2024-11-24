@@ -39,7 +39,7 @@ module proc (
   reg  W_D;  // used for write signal
   reg Imm;
   wire C, N, Z;
-  wire trap;
+  wire trap, time_compare;
   wire [31:0] ADDR;
 
   //csr wires
@@ -49,6 +49,7 @@ module proc (
   wire [31:0] mepc;
   wire [31:0] mcause;
   wire [31:0] mbadaddr;
+  wire [31:0] mtvec;
 
   wire [6:0] Imm_funct = I_Imm[11:5];
   wire [4:0] reduced_Imm = I_Imm[4:0];
@@ -385,8 +386,8 @@ module proc (
           2: width = 2'b00;
           default:;
         endcase
-            load = 1'b1;
-            G_in = 1'b1;
+            //load = 1'b1;
+            //G_in = 1'b1;
             load = 1'b1;
             Done = 1'b1; 
       end
@@ -516,7 +517,7 @@ module proc (
       .resetn(resetn),
       .clk(clk),
       .En(pc_incr),
-      .PLoad(pc_in),
+      .PLoad(pc_in | trap),
       .Q(pc)
   );
 
@@ -567,7 +568,7 @@ module proc (
     else PCSrc = pc + 4;
   end
   else begin
-    
+    PCSrc = mtvec;
   end
   always@(*)
     case(width)
@@ -744,15 +745,18 @@ module proc (
   csr csr_inst(
     .clk(clk),
     .resetn(resetn),
-    .csr_addr(12'b0),
-    .data_in(0),
-    .done(done),
+    .csr_addr(realaddr),
+    .data_in(dout),
+    .done(Done),
+    .write_en(W),
     .mstatus(mstatus),
     .mie(mie),
     .mip(mip),
     .mepc(mepc),
     .mcause(mcause),
     .mbadaddr(mbadaddr),
+    .mtvec(mtvec),
+    .time_compare,
     .csr_readbus()
   );
 
@@ -766,7 +770,14 @@ module proc (
     .mbadaddr(mbadaddr),
     .mepc(mepc),
     .trap(trap),
-    .done(Done)
+    .done(Done),
+    .addr(realaddr),
+    .load(load),
+    .W(W),
+    .time_compare(time_compare),
+    .opcode(opcode),
+    .Sum(Sum),
+    .G(G)
   );
 
   // Dump waves

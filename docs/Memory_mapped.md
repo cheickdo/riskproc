@@ -1,5 +1,5 @@
 
-Currently allocated CSR addresses
+Currently allocated CSR and memory mapped addresses
 
 Field specification format:
 WIRI: 2'b00
@@ -7,7 +7,7 @@ WPRI: 2'b01
 WLRL: 2'b10
 WARL: 2'b11
 
-
+Addresses in table are given as word-addresses. Real addresses are represented by a bitshift to the left by 2
 
 | Address   | Internal mapping |Privilege        | Name | Description         |
 |:-------|:--------|:----------|:-------------|:--------------------------------|
@@ -53,3 +53,5 @@ WARL: 2'b11
 | 0x788  |0x27| MRW | mhcycle_deltah | upper 32b of hcycle counter delta |
 | 0x789  |0x28| MRW | mhtime_deltah | upper 32b of htime counter delta |
 | 0x78A  |0x29| MRW | mhinstret_deltah | upper 32b of hinstret counter delta|
+| 0x800  |0x2A| MRW | mtimecmp         | time comparison register|
+| 0x801  |0x2B| MRW | mtimecmph        | upper 32b of time comparison register|

@@ -1,7 +1,7 @@
 module csr(
     input clk,
     input resetn,
-    input [11:0] csr_addr,
+    input [31:0] csr_addr,
     input [31:0] data_in,
     input write_en,
     input done,
@@ -12,37 +12,73 @@ module csr(
     input [31:0] mcause,
     input [31:0] mbadaddr,
     input [31:0] mepc,
+    output [31:0] mtvec,
+    output reg time_compare,
     output reg [31:0] csr_readbus
 );
     parameter XLEN = 32;
 
-    reg [63:0] mtime;
+    //reg [63:0] mtime;
     reg [63:0] mtimecmp;
     reg [47:0][31:0] csreg;
+    wire [31:0] w_cs_addr;
+    wire [31:0] mcycle, mcycleh, minstret, minstreth, mtime, mtimeh;
+
+    assign w_cs_addr = csr_addr >> 2;
 
     wire [23:0] group;
-    assign group = csr_addr[31:8];
+    assign group = w_cs_addr[15:4];
     wire [7:0] select;
-    assign select = csr_addr[7:0];
+    assign select = w_cs_addr[3:0];
 
     assign mstatus = csreg['h5];
     assign mie = csreg['h8];
     assign mip = csreg['hE];
-    //assign mcause = csreg['hC];
+    assign mtvec = csreg['h9];
     assign csreg['hC] = mcause;
-    //assign mbadaddr = csreg['hD];
     assign csreg['hD] = mbadaddr;
     assign csreg['hB] = mepc;
     //TODO timer implementation and wiring
 
+    //instantiations
+    counter #(.XLEN(64)) machine_cycle(
+        .clk(clk),
+        .resetn(resetn),
+        .enable(1'b1),
+        .out({mcycleh,mcycle})
+    );
+
+    counter  #(.XLEN(64)) machine_instret(
+        .clk(clk),
+        .resetn(resetn),
+        .enable(done),
+        .out({minstreth,minstret})
+    );
+
+    counter  #(.XLEN(64)) timer(
+        .clk(clk),
+        .resetn(resetn),
+        .enable(1'b1),
+        .out({mtimeh,mtime})
+    );
+
+    //time compare logic
+    always@(*)
+        if (mtimecmp >= {mtime,mtimeh})
+            time_compare = 1;
+        else
+            time_compare = 0;
+
+    assign csreg['hF] = mcycle;
+    assign csreg['h12] = mcycleh;
+    assign csreg['h11] = minstret;
+    assign csreg['h14] = minstreth;
+
 
     //decoder for reading
     always@(*) begin
-        csr_readbus = csreg[csr_addr]; //only should be allowed given privilege mode of process TODO
+        csr_readbus = csreg[w_cs_addr]; //only should be allowed given privilege mode of process TODO
     end
-
-    //assign csreg['hF01] = mtime;
-    //assign csreg['hF81] = mtimeh;
 
     //read only registers
     assign csreg[0]  = 32'b10000000000100000000000100000000;//misa register
@@ -110,6 +146,12 @@ module csr(
                         8'hA: csreg['h29] <= data_in;
                     endcase
                 end
+                24'h80: begin
+                    case(select)
+                        8'h0: mtimecmp[31:0] <= data_in;
+                        8'h1: mtimecmp[63:32] <= data_in;
+                    endcase
+                end
                 default:;
             endcase
 
@@ -136,6 +178,12 @@ module csr(
             end
             24'h78: begin
                 csr_readbus <= csreg[select + 'h21];
+            end
+            24'h80: begin
+                if (select == 0)
+                    csr_readbus <= mtimecmp[31:0];
+                else if (select == 1)
+                    csr_readbus <= mtimecmp[63:32];
             end
             default:;
             endcase

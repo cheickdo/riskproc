@@ -1,8 +1,6 @@
-Try trapping with illegal access fault
+bug if mepc happens at 0, doesn't trap #TODO
 
-When trap occurs -> write to mcause, asynchronous trap implemented first
+- Handle interrupt posting in controller
+- Include vectored trapping through mtvec
+- Include return from trap instructions
 
-check at end of instruction (Done signal asserted),
-pc <= mtvec
-//stuff
-return from trap instruction 

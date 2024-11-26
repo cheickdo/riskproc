@@ -9,3 +9,4 @@ rdcycle, 111011, 0x1, atomic read & set bits in cycle
 rdcycleh, 111011, 0x1, atomic read & set bits in cycleh
 rdinstret, 111011, 0x1, atomic read & set bits in instret
 rdinstreth, 111011, 0x1, atomic read & set bits in instreth
+mret, 111011, 0x6, Return from machine level trap

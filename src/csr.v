@@ -111,7 +111,7 @@ module csr(
                         //8'h1: csreg['hB] <= data_in;
                         //8'h2: csreg['hC] <= data_in;
                         //8'h3: csreg['hD] <= data_in;
-                        8'h4: csreg['hE] <= data_in;
+                        //8'h4: csreg['hE] <= data_in;
                     endcase
                 end
                 24'h31: begin

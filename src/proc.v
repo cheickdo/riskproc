@@ -3,23 +3,25 @@ module proc (
     input wire resetn,
     input wire clk,
     input wire run,
-    output wire [31:0] dout,
-    output reg [31:0] realaddr,
+    output wire [XLEN-1:0] dout,
+    output reg [XLEN-1:0] realaddr,
     output wire W
 );
 
-  wire [31:0] R_in;  // r0, ..., r7 register enables
+  parameter XLEN = 32;
+
+  wire [XLEN-1:0] R_in;  // r0, ..., r7 register enables
   reg rs1_in, rs2_in, rd_in, IR_in, ADDR_in, Done, dout_in, load, din_in, G_in, F_in, AddSub, Arith, zero_extend, branch;
   reg [1:0] width;
   reg [2:0] Tstep_Q, Tstep_D;
-  reg signed [31:0] BusWires1;
-  reg [31:0] BusWires2, PCSrc;
+  reg signed [XLEN-1:0] BusWires1;
+  reg [XLEN-1:0] BusWires2, PCSrc;
   reg [5:0] Select1, Select2;  // BusWires selector
   
-  reg [31:0] Sum_full;
+  reg [XLEN-1:0] Sum_full;
   wire [7:0] Sum_byte = Sum_full[7:0];
   wire [15:0] Sum_half = Sum_full[15:0];
-  reg [31:0] Sum;
+  reg [XLEN-1:0] Sum;
 
   reg ALU_Cout;  // ALU carry-out
   wire [2:0] funct3;
@@ -28,11 +30,11 @@ module proc (
   wire [11:0] I_Imm, S_Imm, B_Imm;
   wire [9:0] J_Imm; //Not sure if this width is correct
   wire [19:0] U_Imm; //Not sure if this width is correct
-  wire [31:0] r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11,
+  wire [XLEN-1:0] r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11,
     r12, r13, r14, r15, r16, r17, r18, r19, r20, r21, r22, r23, r24, r25, r26, r27, r28
     , r29, r30, r31, pc, A;
-  wire [31:0] G;
-  wire [31:0] IR;
+  wire [XLEN-1:0] G;
+  wire [XLEN-1:0] IR;
   reg pc_incr;  // used to increment the pc
   reg sp_incr, sp_decr;
   reg pc_in; 
@@ -40,16 +42,16 @@ module proc (
   reg Imm;
   wire C, N, Z;
   wire trap, time_compare;
-  wire [31:0] ADDR;
+  wire [XLEN-1:0] ADDR;
 
   //csr wires
-  wire [31:0] mstatus;
-  wire [31:0] mie;
-  wire [31:0] mip;
-  wire [31:0] mepc;
-  wire [31:0] mcause;
-  wire [31:0] mbadaddr;
-  wire [31:0] mtvec;
+  wire [XLEN-1:0] mstatus;
+  wire [XLEN-1:0] mie;
+  wire [XLEN-1:0] mip;
+  wire [XLEN-1:0] mepc;
+  wire [XLEN-1:0] mcause;
+  wire [XLEN-1:0] mbadaddr;
+  wire [XLEN-1:0] mtvec;
 
   wire [6:0] Imm_funct = I_Imm[11:5];
   wire [4:0] reduced_Imm = I_Imm[4:0];

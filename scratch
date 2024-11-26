@@ -4,5 +4,12 @@ bug if mepc happens at 0, doesn't trap #TODO
 - Include vectored trapping through mtvec (make implementation through software)
 - Include return from trap instructions (TODO)
 - implement context switching (TODO)
-- standardize implementation by using an XLEN variable
+
+Idea to demonstrate trap capabilities:
+- introduce some trap table with an timer interrupt and standard exception implemented
+- do some basic computations and wait for a trap in timecmp
+- trap and write some stuff into memory, return from trap
+- read that memory, and trap again by misaligned address
+- trap and write something into memory before returning
+
 

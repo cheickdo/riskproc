@@ -18,6 +18,7 @@ Table1. System level instructions implemented
 | rdcycleh    |  111011 |  0x1    |  atomic read & set bits in cycleh                    |
 | rdinstret   |  111011 |  0x1    |  atomic read & set bits in instret                   |
 | rdinstreth  |  111011 |  0x1    |  atomic read & set bits in instreth                  |
+| mret        |  111011 |  0x6    |  Return from machine level trap                      |
 
 TODO:
 **Add exceptions & interrupts**

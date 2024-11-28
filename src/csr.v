@@ -65,7 +65,7 @@ module csr(
 
     //time compare logic
     always@(*)
-        if (mtimecmp >= {mtime,mtimeh})
+        if (mtimecmp <= {mtime,mtimeh})
             time_compare = 1;
         else
             time_compare = 0;
@@ -92,7 +92,6 @@ module csr(
 
         //if (resetn)  {csreg['hF80],csreg['hF00]} <= 0; //cycle counter
         //else {csreg['hF80],csreg['hF00]} <= {csreg['hF80],csreg['hF00]} + 1; //cycle counter
-
         if (write_en) begin //write enabled
             //if (scratch == 1'b1) csreg['h340] <= data_in;
             case(group)

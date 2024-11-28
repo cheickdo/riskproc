@@ -1,6 +1,8 @@
 module interrupt_ctrl(
     input clk,
     input load,
+    input resetn,
+    input ret,
     input [31:0] addr,
     input [31:0] pc,
     input [31:0] mstatus,
@@ -30,6 +32,8 @@ module interrupt_ctrl(
     wire machine_time_ip;
     wire machine_time_ie;
 
+    reg mepc_enn;
+
     //assignments
     assign machine_global_ie = mstatus[3];
     //assign machine_time_ip = mip[7];
@@ -38,36 +42,47 @@ module interrupt_ctrl(
     always@(posedge clk)
         if ((done == 1) & (mepc != 32'h0)) begin
             trap <= 1;
+            mepc_enn <= 1;
         end
-        else trap <= 0;
+        else if (ret == 1) begin
+            trap <= 0;
+            mepc_enn <= 0;
+        end
+        else begin
+            trap <= 0;
+        end
 
     always@(posedge clk)
 
+        if (!resetn) begin
+            mip <= 0;
+            mepc_enn <= 0;
+        end
         //instruction address misaligned
-        if (pc[1:0] != 2'b00) begin
+        else if ((pc[1:0] != 2'b00) & (mepc_enn != 1)) begin
             mbadaddr <= pc;
             mepc <= pc;
             mcause <= 0;
         end
         // load addresss misaligned
-        else if ((load == 1) & (addr[1:0] != 2'b00) & (W == 0)) begin
+        else if ((load == 1) & (addr[1:0] != 2'b00) & (W == 0)& (mepc_enn != 1)) begin
             mepc <= pc;
             mbadaddr <= pc;
             mcause <= 4;
         end
         //store address misaligned
-        else if  (/*(W == 1) &*/ (Sum[1:0] != 2'b00) & (opcode == S_type)) begin
+        else if  (/*(W == 1) &*/ (Sum[1:0] != 2'b00) & (opcode == S_type)& (mepc_enn != 1)) begin
             mepc <= pc;
             mbadaddr <= pc;
             mcause <= 5;
         end
         //else check interrupts
-        else if ((time_compare == 1) & (machine_global_ie & machine_time_ie & (!mip[7]))) begin
+        else if ((time_compare == 1) & (machine_global_ie & machine_time_ie & (!mip[7]))& (mepc_enn != 1)) begin
             mcause <= (1<<31) | (32'h7);
             mepc <= pc;
             mip[7] <= 1;
         end
-        else begin
+        else if ((mepc_enn != 1)) begin
             mbadaddr <= 0;
             mepc <= 0;
         end

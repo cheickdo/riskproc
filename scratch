@@ -2,7 +2,6 @@ bug if mepc happens at 0, doesn't trap #TODO
 
 - Handle interrupt posting in controller (To verify)
 - Include vectored trapping through mtvec (make implementation through software)
-
 - Include return from trap instructions (TODO)
 - implement context switching (TODO)
 
@@ -16,3 +15,13 @@ Idea to demonstrate trap capabilities:
 - trap and write something into memory before returning
 
 
+1. Write to mtvec
+2. Write to timer time_compare
+3. enable machine global interrupt
+4. enable machine time interrupt 
+3. Do nothing and wait for the interrupt
+4. add some number to the register, and return
+
+Current issues:
+- after trapping, csrs get muddled and mepc gets lost, fix this
+- Context switch must be done

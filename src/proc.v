@@ -67,7 +67,7 @@ module proc (
   assign I_Imm = IR[31:20];
   assign S_Imm = {IR[31:25], IR[11:7]};
   assign B_Imm = {IR[31],IR[31], IR[31], IR[7], IR[30:25], IR[11:9]}; //word addressable but instructions assume byte addressability so logic is done here
-  assign J_Imm = {IR[31:22]};
+  assign J_Imm = {IR[31:20]};
   assign U_Imm = {IR[31:12]};
 
   dec3to8 decX (
@@ -768,13 +768,14 @@ module proc (
     .mcause(mcause),
     .mbadaddr(mbadaddr),
     .mtvec(mtvec),
-    .time_compare,
+    .time_compare(time_compare),
     .csr_readbus()
   );
 
   interrupt_ctrl interrupt_ctrl_inst(
     .clk(clk),
     .pc(pc),
+    .ret(ret),
     .mstatus(mstatus),
     .mie(mie),
     .mip(mip),
@@ -786,6 +787,7 @@ module proc (
     .addr(realaddr),
     .load(load),
     .W(W),
+    .resetn(resetn),
     .time_compare(time_compare),
     .opcode(opcode),
     .Sum(Sum),

@@ -29,7 +29,7 @@ async def proc_simple_test(dut):
     #    dut.mem0.my_mem[i] = loadtest[i]
     
     #f = open("../RISCVAssembly_To_MIF/Assembler/BINARY.mc", "r")
-    f = open("MCode.mc", "r")
+    f = open("BINARY.mc", "r")
 
     lines = f.readlines()
 
@@ -64,7 +64,7 @@ async def proc_simple_test(dut):
     await RisingEdge(dut.clk)
 
     
-    for i in range(250):
+    for i in range(500):
         #val = random.randint(0, 1)
         #dut.d.value = val  # Assign the random value val to the input port d
 
@@ -76,15 +76,15 @@ async def proc_simple_test(dut):
 
     #assert dut.mem0.my_mem[0] == 9
     # Check the final input on the next clock
-    print(dut.mem0.my_mem[39].value)
-    print(dut.mem0.my_mem[40].value)
-    print(dut.mem0.my_mem[41].value)
-    print(dut.mem0.my_mem[42].value)
-    print(dut.mem0.my_mem[43].value)
-    print(dut.mem0.my_mem[44].value)
-    print(dut.mem0.my_mem[45].value)
-    print(dut.mem0.my_mem[46].value)
-    print(dut.mem0.my_mem[47].value)
+    #print(dut.mem0.my_mem[39].value)
+    #print(dut.mem0.my_mem[40].value)
+    #print(dut.mem0.my_mem[41].value)
+    #print(dut.mem0.my_mem[42].value)
+    #print(dut.mem0.my_mem[43].value)
+    #print(dut.mem0.my_mem[44].value)
+    #print(dut.mem0.my_mem[45].value)
+    #print(dut.mem0.my_mem[46].value)
+    #print(dut.mem0.my_mem[47].value)
 
 
     print("Test complete")

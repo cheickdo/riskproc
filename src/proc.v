@@ -11,7 +11,9 @@ module proc (
   parameter XLEN = 32;
 
   wire [XLEN-1:0] R_in;  // r0, ..., r7 register enables
-  reg rs1_in, rs2_in, rd_in, IR_in, ADDR_in, Done, dout_in, load, din_in, G_in, F_in, AddSub, Arith, zero_extend, branch;
+  reg rs1_in, rs2_in, rd_in, IR_in, ADDR_in, Done, dout_in, 
+    load, din_in, G_in, F_in, AddSub, Arith, zero_extend, branch,
+      ret;
   reg [1:0] width;
   reg [2:0] Tstep_Q, Tstep_D;
   reg signed [XLEN-1:0] BusWires1;
@@ -153,6 +155,7 @@ module proc (
     branch = 1'b0;
     load = 1'b0;
     zero_extend = 1'b0;
+    ret = 1'b0;
     width = 2'b00;
 
     case (Tstep_Q)
@@ -462,6 +465,11 @@ module proc (
             default: ;
           endcase
         end
+      SYSTEM_type: begin
+        pc_in = 1'b1;
+        ret = 1'b1;
+        Done = 1'b1;
+      end
       default: ;
     endcase
     endcase
@@ -566,7 +574,8 @@ module proc (
 
   //pc logic unit
   always @(*)
-  if (!trap) begin
+  if (ret) PCSrc = mepc;
+  else if (!trap) begin
     if (branch) PCSrc = G; 
     else PCSrc = pc + 4;
   end

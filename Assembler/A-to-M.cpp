@@ -1019,6 +1019,16 @@ void SBFunction(int index,int index1)
 	hexa();
 }
 
+void SYSFunction(int index, int index1) {
+	for (size_t i = 0; i<32; ++i) {
+		binary[i] = 0;
+	}
+	int i = 6;
+	for(int j=25;j<=31;j++)
+		binary[j] = Format[index1][i++]-48;
+	hexa();
+}
+
 void typenumber(string ins,int index,int index1)
 {
 	if(ins=="I")
@@ -1033,6 +1043,8 @@ void typenumber(string ins,int index,int index1)
 		UFunction(index,index1);
 	if(ins=="SB")
 		SBFunction(index,index1);
+	if (ins=="SYS")
+		SYSFunction(index, index1);
 }
 
 //To extract instruction type and process them independently
@@ -1069,6 +1081,7 @@ void process()
 			}  
 			if(ins.compare(type)==0)
 			{
+				//std::cout << type <<std::endl;
 				int size1 = Format[k].size();
 				k1 = size1-1;
 				string type1;
@@ -1244,11 +1257,15 @@ void shift()
 		{
 			ins.clear();
 			while(j<codeinit[i].size() && codeinit[i][j]==' ')
-			j++;
+				j++;
+			
 			start = j;
-			while(codeinit[i][j]!=' ')
+			while((codeinit[i][j]!=' ') && (j < codeinit[i].size())) {
 				ins += codeinit[i][j++];
+				//std::cout << ins << std::endl;
+			}
 		}
+
 		if(ins == "la")
 		{
 			processla(i);
@@ -1416,6 +1433,7 @@ int main()
 	files.open("MCode.mc");
 	files.close();
 	formats();
+
 	ifstream myFile;
 	myFile.open("test.asm");
 	string line;

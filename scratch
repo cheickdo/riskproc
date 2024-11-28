@@ -2,8 +2,11 @@ bug if mepc happens at 0, doesn't trap #TODO
 
 - Handle interrupt posting in controller (To verify)
 - Include vectored trapping through mtvec (make implementation through software)
+
 - Include return from trap instructions (TODO)
 - implement context switching (TODO)
+
+- Add multiplication support
 
 Idea to demonstrate trap capabilities:
 - introduce some trap table with an timer interrupt and standard exception implemented

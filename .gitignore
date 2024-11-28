@@ -13,6 +13,8 @@
 #dumps
 *.vcd
 *.xml
+*.gtkw
+*.idx
 
 # Linker output
 *.ilk
@@ -42,6 +44,10 @@
 *.i*86
 *.x86_64
 *.hex
+
+#extra
+scratch
+table.csv
 
 # Debug files
 *.dSYM/

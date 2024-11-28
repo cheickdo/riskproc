@@ -1,24 +1,24 @@
-# nproc
+# riskproc
 Implementation of a byte addressable RV32I compliant RISC-V processor in Verilog
 
 The implementation currently only supports machine mode execution
 
-Table1. System level instructions implemented
+## Table1. System level instructions implemented
 
 
 | Instruction |  Opcode |  funct3 |  Description                                         |
 |-------------|---------|---------|------------------------------------------------------|
-| cssrrw      |  111011 |  0x0    |  atomic read/write csr                               |
-| cssrrs      |  111011 |  0x1    |  atomic read & set bits in csr                       |
-| cssrrc      |  111011 |  0x2    |  atomic read & clear bits in csr                     |
-| cssrwi      |  111011 |  0x3    |  atomic read/write csr via immediate value           |
-| cssrsi      |  111011 |  0x4    |  atomic read & set bits in csr via immediate value   |
-| cssrci      |  111011 |  0x5    |  atomic read & clear bits in csr via immediate value |
-| rdcycle     |  111011 |  0x1    |  atomic read & set bits in cycle                     |
-| rdcycleh    |  111011 |  0x1    |  atomic read & set bits in cycleh                    |
-| rdinstret   |  111011 |  0x1    |  atomic read & set bits in instret                   |
-| rdinstreth  |  111011 |  0x1    |  atomic read & set bits in instreth                  |
-| mret        |  111011 |  0x6    |  Return from machine level trap                      |
+| cssrrw      |  1110011 |  0x0    |  atomic read/write csr                               |
+| cssrrs      |  1110011 |  0x1    |  atomic read & set bits in csr                       |
+| cssrrc      |  1110011 |  0x2    |  atomic read & clear bits in csr                     |
+| cssrwi      |  1110011 |  0x3    |  atomic read/write csr via immediate value           |
+| cssrsi      |  1110011 |  0x4    |  atomic read & set bits in csr via immediate value   |
+| cssrci      |  1110011 |  0x5    |  atomic read & clear bits in csr via immediate value |
+| rdcycle     |  1110011 |  0x1    |  atomic read & set bits in cycle                     |
+| rdcycleh    |  1110011 |  0x1    |  atomic read & set bits in cycleh                    |
+| rdinstret   |  1110011 |  0x1    |  atomic read & set bits in instret                   |
+| rdinstreth  |  1110011 |  0x1    |  atomic read & set bits in instreth                  |
+| mret        |  1110011 |  0x6    |  Return from machine level trap                      |
 
 TODO:
 **Add exceptions & interrupts**

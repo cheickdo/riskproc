@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.120 (w)1999-2024 BSI
-[*] Fri Nov 29 02:33:55 2024
+[*] Fri Nov 29 04:45:48 2024
 [*]
 [dumpfile] "/home/chk/Documents/riskproc/verif/dump.vcd"
-[dumpfile_mtime] "Fri Nov 29 02:25:49 2024"
-[dumpfile_size] 426738
+[dumpfile_mtime] "Fri Nov 29 04:45:27 2024"
+[dumpfile_size] 398928
 [savefile] "/home/chk/Documents/riskproc/verif/default_signals.gtkw"
-[timestart] 19386000
+[timestart] 447000
 [size] 1072 774
 [pos] 2564 4
-*-17.988501 19925000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-19.188501 2050000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.core0.
 [sst_width] 209
@@ -32,7 +32,6 @@ top.core0.W
 top.core0.IR[31:0]
 top.core0.r0[31:0]
 top.core0.r1[31:0]
-top.core0.opcode[7:0]
 top.core0.r2[31:0]
 top.core0.r3[31:0]
 top.core0.r4[31:0]
@@ -70,10 +69,8 @@ top.core0.csr_inst.mstatus[31:0]
 top.core0.csr_inst.mie[31:0]
 top.core0.pc[31:0]
 top.core0.PCSrc[31:0]
-@29
-top.core0.ret
 @28
-top.core0.sys_clear
+top.core0.ret
 top.core0.time_compare
 [pattern_trace] 1
 [pattern_trace] 0

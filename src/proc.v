@@ -13,7 +13,7 @@ module proc (
   wire [XLEN-1:0] R_in;  // r0, ..., r7 register enables
   reg rs1_in, rs2_in, rd_in, IR_in, ADDR_in, Done, dout_in, 
     load, din_in, G_in, F_in, AddSub, Arith, zero_extend, branch,
-      ret, sys_clear;
+      mul_arith, ret, sys_clear;
   reg [1:0] width;
   reg [2:0] Tstep_Q, Tstep_D;
   reg signed [XLEN-1:0] BusWires1;
@@ -24,7 +24,10 @@ module proc (
   wire [7:0] Sum_byte = Sum_full[7:0];
   wire [15:0] Sum_half = Sum_full[15:0];
   reg [XLEN-1:0] Sum;
-
+  wire [64:0] sproduct;
+  wire [64:0] product;
+  wire [64:0] suproduct;
+ 
   reg ALU_Cout;  // ALU carry-out
   wire [2:0] funct3;
   wire [7:0] opcode, funct7;
@@ -114,6 +117,7 @@ module proc (
 
   //arithmetic instruction funct3
   parameter SLL = 3'b001, XOR = 3'b100, SRL = 3'b101, SRA = 3'b101, OR = 3'b110, AND = 3'b111, SLT = 3'b010, SLTU = 3'b011;
+  parameter MUL = 3'b000, MULH = 3'b001, MULSU = 3'b010, MULU = 3'b011, DIV = 3'b100, DIVU = 3'b101, REM = 3'b110, REMU = 3'b111;
 
   //Load types
   parameter LB = 3'b000, LH = 3'b001, LW = 3'b010, LBU = 3'b100, LBHU = 3'b101;
@@ -144,6 +148,7 @@ module proc (
     Select1    = 6'bxxxxx;
     Select2 = 6'bxxxxx;
     Arith = 1'b0;
+    mul_arith = 1'b0;
     AddSub    = 1'b0;
     Imm = 1'b0;
     din_in = 1'b0;
@@ -178,15 +183,21 @@ module proc (
           Select2 = {2'b0, rs2[4:0]};
           G_in = 1'b1;
 
-          case (funct3)
-            0: begin //add 
-              if (funct7[5] == 1) AddSub = 1'b1;
-            end 
-            default: begin
-              Arith = 1'b1;
-            end
+          if (funct7[0] == 1)begin //MUL instructions
+            mul_arith = 1'b1;
+          end
+          else begin
+            case (funct3)
+              0: begin //add 
+                if (funct7[5] == 0)
+                if (funct7[5] == 1) AddSub = 1'b1;
+              end 
+              default: begin
+                Arith = 1'b1;
+              end
 
-          endcase
+            endcase
+          end
         end
 
         I_type_1: begin
@@ -598,9 +609,26 @@ module proc (
     endcase
 
   // alu
+
+  assign product = $unsigned(BusWires1) * $unsigned(BusWires2);
+  assign sproduct = $signed(BusWires1) * $signed(BusWires2);
+  assign suproduct = $signed(BusWires1) * $unsigned(BusWires2);
+
   always @(*)
 
     if (din_in) Sum_full = din;
+    else if (mul_arith) 
+      case (funct3)
+        MUL: {ALU_Cout, Sum_full} = sproduct[32:0];
+        MULH:{ALU_Cout, Sum_full} = sproduct[64:32];
+        MULSU:{ALU_Cout, Sum_full} = suproduct[32:0];
+        MULU: {ALU_Cout, Sum_full} = product[32:0];
+        DIV: {ALU_Cout, Sum_full} = $signed(BusWires1) / $signed(BusWires2);
+        DIVU: {ALU_Cout, Sum_full} = $unsigned(BusWires1) / $unsigned(BusWires2);
+        REM: {ALU_Cout, Sum_full} = $signed(BusWires1) % $signed(BusWires2);
+        REMU: {ALU_Cout, Sum_full} = $unsigned(BusWires1) % $unsigned(BusWires2);
+        default: ;
+      endcase
     else if (Arith) //set of R-type non-add arithmetic instructions
       case (funct3)
         SLL: begin
@@ -692,8 +720,8 @@ module proc (
     always @(*)
     if (Imm) begin
       case (opcode) 
-        I_type_1: BusWires2 = {21'b0,I_Imm}; //TODO might want to sign extend this
-        I_type_2: BusWires2 = {21'b0,I_Imm};
+        I_type_1: BusWires2 = {{21{I_Imm[11]}},I_Imm}; //TODO might want to sign extend this
+        I_type_2: BusWires2 = {{21{I_Imm[11]}},I_Imm};
         S_type: BusWires2 = {21'b0, S_Imm};
         UJ_type: BusWires2 = {{12{UJ_Imm[20]}},UJ_Imm};
         SB_type: BusWires2 = {{21{I_Imm}},I_Imm};

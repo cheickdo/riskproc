@@ -1,9 +1,9 @@
 # riskproc
-Implementation of a byte addressable RV32I compliant RISC-V processor in Verilog
+Implementation of a byte addressable RV32I, RV32M compliant RISC-V processor in Verilog
 
 The implementation currently only supports machine mode execution
 
-## Table1. System level instructions implemented
+## Table1. System level instructions
 
 
 | Instruction |  Opcode |  funct3 |  Description                                         |
@@ -20,26 +20,13 @@ The implementation currently only supports machine mode execution
 | rdinstreth  |  1110011 |  0x1    |  atomic read & set bits in instreth                  |
 | mret        |  1110011 |  0x6    |  Return from machine level trap                      |
 
-TODO:
-**Add exceptions & interrupts**
-**Connect keyboard and VGA peripherals**
-
+## Table1. Exception table
 | Interrupt   | Exception Code |Description |    
 |:-------|:--------|:----------|
 |0|0|instruction address misaligned|
 |0|2|illegal instruction|
 |0|4|load address misaligned|
 |0|5|store address misaligned|
-
-**Add RV32M support**
-imlpement mul
-implement mulh
-implement mulsu
-implement mulu
-implement div
-implement divu
-implement rem
-implement remu
 
 **Add RV32F support**
 

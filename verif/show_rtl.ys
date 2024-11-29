@@ -1,0 +1,7 @@
+# read design
+read_verilog src/fparith.v
+hierarchy -check
+
+# high-level synthesis
+proc; opt; fsm; opt; memory; opt;
+show -format dot;

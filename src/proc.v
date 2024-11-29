@@ -116,6 +116,8 @@ module proc (
   parameter R_type = 7'b0110011, I_type_1=7'b0000011, I_type_2 = 7'b0010011;
   parameter SB_type = 7'b1100111, S_type = 7'b0100011, U_type = 7'b0110111, UJ_type=7'b1101111, U2_type = 7'b0010111, B_type = 7'b1100011;
   parameter SYSTEM_type = 7'b1110011;
+  parameter FLW_type = 7'b0000111, FSW_type = 7'b0100111, FMADD_type = 7'b1000011, FMSUB_type = 7'b1000111,
+     FNM_SUB_type = 7'b1001011, FNMADD_type = 7'b1001111, F_type = 7'b1010011;
 
   //arithmetic instruction funct3
   parameter SLL = 3'b001, XOR = 3'b100, SRL = 3'b101, SRA = 3'b101, OR = 3'b110, AND = 3'b111, SLT = 3'b010, SLTU = 3'b011;
@@ -126,6 +128,12 @@ module proc (
 
   //conditional branches
   parameter beq = 3'b000, bne = 3'b001, blt = 3'b100, bge = 3'b101, bltu = 3'b110, bgeu = 3'b111;
+
+  //floating point types 
+  parameter fmv = 3'b000, flt = 3'b001, fmem = 3'b010;
+  parameter fadd = 7'b0000000, fsub = 7'b0000100, fmul = 7'b0001000, fdiv = 7'b0001100, fsqrt = 7'b0101100,
+    fsgn = 7'b0010000, fmin = 7'b0010100, fcvt = 7'b1100000, fmv = 7'b1110000, feq = 7'b1010000, fclass =  7'b1110000,
+    fcvt2 = 7'b1101000, fmvw = 7'b1111000;
 
   // selectors for the BusWires multiplexer
   parameter _R0 = 6'b000000, _R1 = 6'b000001, _R2 = 6'b000010, _R3 = 6'b000011, _R4 = 6'b000100, 

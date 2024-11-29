@@ -25,3 +25,5 @@ Idea to demonstrate trap capabilities:
 Current issues:
 - after trapping, csrs get muddled and mepc gets lost, fix this
 - Context switch must be done
+
+incorrect JAL encoding?

@@ -13,7 +13,7 @@ module proc (
   wire [XLEN-1:0] R_in;  // r0, ..., r7 register enables
   reg rs1_in, rs2_in, rd_in, IR_in, ADDR_in, Done, dout_in, 
     load, din_in, G_in, F_in, AddSub, Arith, zero_extend, branch,
-      ret;
+      ret, sys_clear;
   reg [1:0] width;
   reg [2:0] Tstep_Q, Tstep_D;
   reg signed [XLEN-1:0] BusWires1;
@@ -30,7 +30,8 @@ module proc (
   wire [7:0] opcode, funct7;
   wire [4:0] rs1, rd, rs2;  // instruction opcode and register operands
   wire [11:0] I_Imm, S_Imm, B_Imm;
-  wire [9:0] J_Imm; //Not sure if this width is correct
+  //wire [9:0] J_Imm; //Not sure if this width is correct
+  wire [20:0] UJ_Imm;
   wire [19:0] U_Imm; //Not sure if this width is correct
   wire [XLEN-1:0] r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11,
     r12, r13, r14, r15, r16, r17, r18, r19, r20, r21, r22, r23, r24, r25, r26, r27, r28
@@ -67,7 +68,7 @@ module proc (
   assign I_Imm = IR[31:20];
   assign S_Imm = {IR[31:25], IR[11:7]};
   assign B_Imm = {IR[31],IR[31], IR[31], IR[7], IR[30:25], IR[11:9]}; //word addressable but instructions assume byte addressability so logic is done here
-  assign J_Imm = {IR[31:20]};
+  assign UJ_Imm = {IR[31], IR[19:12], IR[20], IR[30:21], 1'b0};
   assign U_Imm = {IR[31:12]};
 
   dec3to8 decX (
@@ -109,7 +110,7 @@ module proc (
 
   parameter R_type = 7'b0110011, I_type_1=7'b0000011, I_type_2 = 7'b0010011;
   parameter SB_type = 7'b1100111, S_type = 7'b0100011, U_type = 7'b0110111, UJ_type=7'b1101111, U2_type = 7'b0010111, B_type = 7'b1100011;
-  parameter SYSTEM_type = 7'b111011;
+  parameter SYSTEM_type = 7'b1110011;
 
   //arithmetic instruction funct3
   parameter SLL = 3'b001, XOR = 3'b100, SRL = 3'b101, SRA = 3'b101, OR = 3'b110, AND = 3'b111, SLT = 3'b010, SLTU = 3'b011;
@@ -694,7 +695,7 @@ module proc (
         I_type_1: BusWires2 = {21'b0,I_Imm}; //TODO might want to sign extend this
         I_type_2: BusWires2 = {21'b0,I_Imm};
         S_type: BusWires2 = {21'b0, S_Imm};
-        UJ_type: BusWires2 = {{23{J_Imm[9]}},J_Imm};
+        UJ_type: BusWires2 = {{12{UJ_Imm[20]}},UJ_Imm};
         SB_type: BusWires2 = {{21{I_Imm}},I_Imm};
         U_type: BusWires2 = {{12{U_Imm}},U_Imm};
         U2_type: BusWires2 = {{12{U_Imm}},U_Imm};
@@ -783,7 +784,8 @@ module proc (
     .mbadaddr(mbadaddr),
     .mepc(mepc),
     .trap(trap),
-    .done(Done),
+    //.done(Done),
+    .Tstep_Q(Tstep_Q),
     .addr(realaddr),
     .load(load),
     .W(W),

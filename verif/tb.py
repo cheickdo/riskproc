@@ -40,8 +40,8 @@ async def proc_simple_test(dut):
         #print(line)
         #print(bin(int(line,2)))
         #print()
-        print(line)
         dut.mem0.my_mem[j] = int(line,2)
+        print(line.rstrip('\n'))
         #print(line, end = '')
         j += 1
 

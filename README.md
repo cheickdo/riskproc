@@ -20,7 +20,7 @@ The implementation currently only supports machine mode execution
 | rdinstreth  |  1110011 |  0x1    |  atomic read & set bits in instreth                  |
 | mret        |  1110011 |  0x6    |  Return from machine level trap                      |
 
-## Table1. Exception table
+## Table2. Exception table
 | Interrupt   | Exception Code |Description |    
 |:-------|:--------|:----------|
 |0|0|instruction address misaligned|

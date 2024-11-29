@@ -9,6 +9,7 @@ module proc (
 );
 
   parameter XLEN = 32;
+  parameter FLEN = 32;
 
   wire [XLEN-1:0] R_in;  // r0, ..., r7 register enables
   reg rs1_in, rs2_in, rd_in, IR_in, ADDR_in, Done, dout_in, 
@@ -58,6 +59,7 @@ module proc (
   wire [XLEN-1:0] mcause;
   wire [XLEN-1:0] mbadaddr;
   wire [XLEN-1:0] mtvec;
+  wire [FLEN-1:0] fcsr;
 
   wire [6:0] Imm_funct = I_Imm[11:5];
   wire [4:0] reduced_Imm = I_Imm[4:0];
@@ -798,6 +800,7 @@ module proc (
     .mbadaddr(mbadaddr),
     .mtvec(mtvec),
     .time_compare(time_compare),
+    .fcsr(fcsr),
     .csr_readbus()
   );
 

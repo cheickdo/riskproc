@@ -55,3 +55,4 @@ Addresses in table are given as word-addresses. Real addresses are represented b
 | 0x78A  |0x29| MRW | mhinstret_deltah | upper 32b of hinstret counter delta|
 | 0x800  |0x2A| MRW | mtimecmp         | time comparison register|
 | 0x801  |0x2B| MRW | mtimecmph        | upper 32b of time comparison register|
+| 0x900  |0x2C| MRW | fcsr        | csr control and status register|

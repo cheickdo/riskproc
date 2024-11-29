@@ -3,7 +3,7 @@ Implementation of a byte addressable RV32I, RV32M compliant RISC-V processor in 
 
 The implementation currently only supports machine mode execution
 
-## Table1. System level instructions
+## Table1. System level instructions (implementation not completed)
 
 
 | Instruction |  Opcode |  funct3 |  Description                                         |

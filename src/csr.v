@@ -14,15 +14,17 @@ module csr(
     input [31:0] mepc,
     output [31:0] mtvec,
     output reg time_compare,
+    output reg fcsr,
     output reg [31:0] csr_readbus
 );
     parameter XLEN = 32;
 
     //reg [63:0] mtime;
     reg [63:0] mtimecmp;
-    reg [47:0][31:0] csreg;
+    reg [48:0][31:0] csreg;
     wire [31:0] w_cs_addr;
     wire [31:0] mcycle, mcycleh, minstret, minstreth, mtime, mtimeh;
+    wire [31:0] fcsr;
 
     assign w_cs_addr = csr_addr >> 2;
 
@@ -31,6 +33,7 @@ module csr(
     wire [7:0] select;
     assign select = w_cs_addr[3:0];
 
+    assign fcsr = csreg['h2C];
     assign mstatus = csreg['h5];
     assign mie = csreg['h8];
     //assign mip = csreg['hE];
@@ -39,6 +42,7 @@ module csr(
     assign csreg['hC] = mcause;
     assign csreg['hD] = mbadaddr;
     assign csreg['hB] = mepc;
+
     //TODO timer implementation and wiring
 
     //instantiations
@@ -152,6 +156,9 @@ module csr(
                         8'h1: mtimecmp[63:32] <= data_in;
                     endcase
                 end
+                24'h90: begin
+                    csreg['h2C] <= data_in;
+                end
                 default:;
             endcase
 
@@ -184,6 +191,9 @@ module csr(
                     csr_readbus <= mtimecmp[31:0];
                 else if (select == 1)
                     csr_readbus <= mtimecmp[63:32];
+            end
+            24'h90: begin
+                csr_readbus <= csreg[select + 'h2C];
             end
             default:;
             endcase

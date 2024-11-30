@@ -14,7 +14,7 @@ module csr(
     input [31:0] mepc,
     output [31:0] mtvec,
     output reg time_compare,
-    output reg fcsr,
+    output reg [31:0] fcsr,
     output reg [31:0] csr_readbus
 );
     parameter XLEN = 32;
@@ -24,7 +24,6 @@ module csr(
     reg [48:0][31:0] csreg;
     wire [31:0] w_cs_addr;
     wire [31:0] mcycle, mcycleh, minstret, minstreth, mtime, mtimeh;
-    wire [31:0] fcsr;
 
     assign w_cs_addr = csr_addr >> 2;
 

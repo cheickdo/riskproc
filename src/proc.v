@@ -130,9 +130,9 @@ module proc (
   parameter beq = 3'b000, bne = 3'b001, blt = 3'b100, bge = 3'b101, bltu = 3'b110, bgeu = 3'b111;
 
   //floating point types 
-  parameter fmv = 3'b000, flt = 3'b001, fmem = 3'b010;
+  parameter fmv3 = 3'b000, flt = 3'b001, fmem = 3'b010;
   parameter fadd = 7'b0000000, fsub = 7'b0000100, fmul = 7'b0001000, fdiv = 7'b0001100, fsqrt = 7'b0101100,
-    fsgn = 7'b0010000, fmin = 7'b0010100, fcvt = 7'b1100000, fmv = 7'b1110000, feq = 7'b1010000, fclass =  7'b1110000,
+    fsgn = 7'b0010000, fmin = 7'b0010100, fcvt = 7'b1100000, fmv7 = 7'b1110000, feq = 7'b1010000, fclass =  7'b1110000,
     fcvt2 = 7'b1101000, fmvw = 7'b1111000;
 
   // selectors for the BusWires multiplexer

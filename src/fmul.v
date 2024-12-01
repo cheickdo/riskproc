@@ -1,4 +1,4 @@
-module top(
+module fmul(
     input clk,
     input resetn,
     input [31:0] rs1,

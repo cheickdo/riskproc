@@ -12,7 +12,7 @@ def binary(num):
     return ''.join('{:0>8b}'.format(c) for c in struct.pack('!f', num))
 
 
-'''
+
 @cocotb.test()
 async def proc_simple_test(dut):
     """Test elementary functionality of processor"""
@@ -97,8 +97,8 @@ async def proc_simple_test(dut):
     print("Test complete")
 
     #assert dut.q.value == expected_val, "output q was incorrect on the last cycle"
-'''
-'''
+
+
 @cocotb.test()
 async def fptest(dut):
     """Test elementary functionality of processor"""
@@ -146,7 +146,8 @@ async def fptest(dut):
     await RisingEdge(dut.clk)
     await RisingEdge(dut.clk)
     print("Test complete")
-'''
+
+
 
 @cocotb.test()
 async def fpmult(dut):

@@ -48,6 +48,9 @@
 #extra
 scratch
 table.csv
+.vcd
+.vcd.idx
+.gtkw
 
 # Debug files
 *.dSYM/

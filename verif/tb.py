@@ -163,11 +163,11 @@ async def fpmult(dut):
     dut.resetn.value = 0
     await RisingEdge(dut.clk)
     dut.resetn.value = 1
-    #f1 = (random() - 0.5)*(6.8*(10**12))
-    #f2 = (random() - 0.5)*(6.8*(10**12))
-    f1 = 1.0
-    f2 = 1.0
-    fsum = f1+f2
+    f1 = (random() - 0.5)*(6.8*(10**12))
+    f2 = (random() - 0.5)*(6.8*(10**12))
+    #f1 = -1.0
+    #f2 = 2.0
+    fsum = f1*f2
     
 
     print(f1)
@@ -188,7 +188,8 @@ async def fpmult(dut):
     await RisingEdge(dut.clk)
     await RisingEdge(dut.clk)
     await RisingEdge(dut.clk)
-    #print(int(str(dut.out.value),2))
+    await RisingEdge(dut.clk)
+    print(dut.out.value)
     #print(int(binary(fsum),2))
 
 

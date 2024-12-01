@@ -3,7 +3,7 @@ Single Precision IEEE 754 floating point adder
     chk
 */
 
-module top(
+module fpadd(
     input clk,
     input resetn,
     input [31:0] rs1,

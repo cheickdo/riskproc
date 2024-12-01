@@ -1,2 +1,17 @@
 single precision:
 1 bit sign, 8 bit exponent, 23 bit fraction
+
+wire s1, s2;
+wire [7:0] e1, e2;
+wire [22:0] m1, m2;
+
+reg s_out;
+
+reg [23:0] m11, m21;
+reg [8:0] sum_e, sum2_e_pipe, sum_e_pipe, norm_e_pipe;
+
+//pipes
+reg [7:0] e11_pipe, e21_pipe, e_out; 
+reg [22:0] m11_pipe, m21_pipe, m12_pipe, m22_pipe, m_out;
+
+reg [47:0] prod_m, prod_m_pipe, norm_m_pipe;

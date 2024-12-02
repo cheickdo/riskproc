@@ -2,7 +2,6 @@
 Single Precision IEEE 754 floating point adder
     chk
 */
-
 module fpadd(
     input clk,
     input resetn,
@@ -236,6 +235,6 @@ module fpadd(
   // Dump waves
   initial begin
       $dumpfile("dump.vcd");
-      $dumpvars(1, top);
+      $dumpvars(1, fpadd);
   end
 endmodule

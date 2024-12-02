@@ -1,3 +1,7 @@
+/*
+Single Precision IEEE 754 floating point multipler
+    chk
+*/
 module fmul(
     input clk,
     input resetn,
@@ -122,6 +126,6 @@ always@(posedge clk)
 // Dump waves
 initial begin
     $dumpfile("dump.vcd");
-    $dumpvars(1, top);
+    $dumpvars(1, fmul);
 end
 endmodule

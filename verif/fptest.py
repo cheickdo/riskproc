@@ -1,5 +1,18 @@
+from random import random
+import time
+
+import cocotb
+from cocotb.clock import Clock
+from cocotb.triggers import RisingEdge
+from cocotb.types import LogicArray
+import struct
+import ctypes
+
+def binary(num):
+    return ''.join('{:0>8b}'.format(c) for c in struct.pack('!f', num))
+
 @cocotb.test()
-async def fpdiv(dut):
+async def fptest(dut):
     """Test elementary functionality of processor"""
 
 
@@ -13,11 +26,11 @@ async def fpdiv(dut):
     dut.resetn.value = 0
     await RisingEdge(dut.clk)
     dut.resetn.value = 1
-    f1 = (random() - 0.5)*(6.8*(10**12))
-    f2 = (random() - 0.5)*(6.8*(10**12))
-    #f1 = -1.0
-    #f2 = 2.0
-    fsum = f1*f2
+    #f1 = (random() - 0.5)*(6.8*(10**12))
+    #f2 = (random() - 0.5)*(6.8*(10**12))
+    f1 = 1.0
+    f2 = 1.0
+    fsum = f1/f2
     
 
     print(f1)
@@ -42,7 +55,7 @@ async def fpdiv(dut):
     print(dut.out.value)
     #print(int(binary(fsum),2))
 
-
-    await RisingEdge(dut.clk)
+    for i in range(50):
+        await RisingEdge(dut.clk)
     await RisingEdge(dut.clk)
     print("Test complete")

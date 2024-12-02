@@ -5,14 +5,11 @@
 SIM ?= icarus
 TOPLEVEL_LANG ?= verilog
 
-VERILOG_SOURCES += $(PWD)/../src/proc.v $(PWD)/../src/regn.v 
-VERILOG_SOURCES +=$(PWD)/../src/top.v $(PWD)/../src/memory.v $(PWD)/../src/regarray.v $(PWD)/../src/fregarray.v $(PWD)/../src/csr.v
-VERILOG_SOURCES += $(PWD)/../src/interrupt_ctrl.v  $(PWD)/../src/counter.v $(PWD)/../src/fpu.v
-VERILOG_SOURCES += $(PWD)/../src/fmul.v $(PWD)/../src/fpadd.v  
+VERILOG_SOURCES += $(PWD)/../src/fmul.v $(PWD)/../src/fpadd.v  $(PWD)/../src/fdiv.v  
 
-TOPLEVEL = top
+TOPLEVEL = fdiv
 
-MODULE = tb
+MODULE = fptest
 
 #proc_simple_test: $(MAKE) sim SIM_ARGS='-gARG=1' MODULE=tb TESTCASE=proc_simple_test
 

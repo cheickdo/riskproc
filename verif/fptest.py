@@ -11,6 +11,9 @@ import ctypes
 def binary(num):
     return ''.join('{:0>8b}'.format(c) for c in struct.pack('!f', num))
 
+def bin_to_float(binary):
+    return struct.unpack('!f',struct.pack('!I', int(binary, 2)))[0]
+
 @cocotb.test()
 async def fptest(dut):
     """Test elementary functionality of processor"""
@@ -26,10 +29,10 @@ async def fptest(dut):
     dut.resetn.value = 0
     await RisingEdge(dut.clk)
     dut.resetn.value = 1
-    #f1 = (random() - 0.5)*(6.8*(10**12))
-    #f2 = (random() - 0.5)*(6.8*(10**12))
-    f1 = 1.0
-    f2 = 1.0
+    f1 = (random() - 0.5)*(6.8*(10**12))
+    f2 = (random() - 0.5)*(6.8*(10**12))
+    #f1 = 1.0
+    #f2 = 1.0
     fsum = f1/f2
     
 
@@ -46,14 +49,12 @@ async def fptest(dut):
     dut.rs1.value = int(binary(f1),2)
     dut.rs2.value = int(binary(f2),2)
 
-    await RisingEdge(dut.clk)
-    await RisingEdge(dut.clk)
-    await RisingEdge(dut.clk)
-    await RisingEdge(dut.clk)
-    await RisingEdge(dut.clk)
-    await RisingEdge(dut.clk)
+    for i in range(28):
+        await RisingEdge(dut.clk)
+
     print(dut.out.value)
-    #print(int(binary(fsum),2))
+    print(bin_to_float(str(dut.out.value))) #lazy output checking
+    #sprint(int(binary(fsum),2))
 
     for i in range(50):
         await RisingEdge(dut.clk)

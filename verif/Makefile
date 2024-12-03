@@ -5,9 +5,12 @@
 SIM ?= icarus
 TOPLEVEL_LANG ?= verilog
 
-VERILOG_SOURCES += $(PWD)/../src/fmul.v $(PWD)/../src/fpadd.v  $(PWD)/../src/fdiv.v  
+VERILOG_SOURCES += $(PWD)/../src/proc.v $(PWD)/../src/regn.v 
+VERILOG_SOURCES +=$(PWD)/../src/top.v $(PWD)/../src/memory.v $(PWD)/../src/regarray.v $(PWD)/../src/fregarray.v $(PWD)/../src/csr.v
+VERILOG_SOURCES += $(PWD)/../src/interrupt_ctrl.v  $(PWD)/../src/counter.v $(PWD)/../src/fpu.v
+VERILOG_SOURCES += $(PWD)/../src/fmul.v $(PWD)/../src/fpadd.v  $(PWD)/../src/fdiv.v  $(PWD)/../src/fsqrt.v  
 
-TOPLEVEL = fdiv
+TOPLEVEL = fsqrt
 
 MODULE = fptest
 

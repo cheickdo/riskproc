@@ -1,4 +1,4 @@
 cd verif
 make SIM=icarus
 cd ..
-gtkwave -f verif/dump.vcd -F verif/div.gtkw
+gtkwave -f verif/dump.vcd -F verif/sqrt.gtkw

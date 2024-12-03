@@ -17,8 +17,6 @@ wire s1, s2;
 wire [7:0] e1, e2;
 wire [22:0] m1, m2;
 
-reg [31:0] cnt;
-
 wire [31:0] reciprocal;
 wire [31:0] in_reduced; 
 wire [31:0] in_reducedx2, in_reducedx2n;
@@ -132,12 +130,6 @@ fmul d8(
     .rs2(rs1),
     .out(out)
 );
-
-always@(posedge clk)
-    if (!resetn)
-        cnt = 0;
-    else
-        cnt += 1;
 
 // Dump waves
 initial begin

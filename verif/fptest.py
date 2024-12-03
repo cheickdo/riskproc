@@ -7,6 +7,7 @@ from cocotb.triggers import RisingEdge
 from cocotb.types import LogicArray
 import struct
 import ctypes
+import math
 
 def binary(num):
     return ''.join('{:0>8b}'.format(c) for c in struct.pack('!f', num))
@@ -29,26 +30,27 @@ async def fptest(dut):
     dut.resetn.value = 0
     await RisingEdge(dut.clk)
     dut.resetn.value = 1
-    f1 = (random() - 0.5)*(6.8*(10**12))
-    f2 = (random() - 0.5)*(6.8*(10**12))
-    #f1 = 1.0
+    #f1 = (random() - 0.5)*(6.8*(10**12))
+    #f2 = (random() - 0.5)*(6.8*(10**12))
+    f1 = 16.0
     #f2 = 1.0
-    fsum = f1/f2
-    
+    #fsum = f1/f2
+    fsum = math.sqrt(f1)
 
     print(f1)
-    print(f2)
+    #print(f2)
     print(fsum, end='\n\n')
 
     print(binary(f1))
-    print(binary(f2))
+    #print(binary(f2))
     print(fsum, end='\n\n')
 
     print(binary(fsum))
 
     dut.rs1.value = int(binary(f1),2)
-    dut.rs2.value = int(binary(f2),2)
+    #dut.rs2.value = int(binary(f2),2)
 
+#28 for div/sqrt
     for i in range(28):
         await RisingEdge(dut.clk)
 

@@ -8,7 +8,7 @@ module interrupt_ctrl(
     input [31:0] mstatus,
     input [31:0] mie,
     //input [31:0] mip,
-    input [7:0] opcode,
+    input [6:0] opcode,
     input W,
     input [31:0] G,
     input time_compare,

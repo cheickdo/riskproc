@@ -294,12 +294,21 @@ always @(*) begin  // Output Logic
 
       F_type: begin 
         case (funct7)
-          7'b1111000: begin //convert integer to float
-            Select1 = {2'b0, rs1[4:0]};
-            Select2 = _R0;
-            fop = 4;
-            fpSel = 1'b1;
-            G_in = 1'b1;
+          7'b1101000: begin //convert integer to float
+            if (rs2 == 5'b00000) begin
+              Select1 = {2'b0, rs1[4:0]};
+              Select2 = _R0;
+              fop = 4;
+              fpSel = 1'b1;
+              G_in = 1'b1;
+            end
+          end
+          7'b1110000: begin //move integer to float
+            if (rs2 == 5'b00000) begin
+              Select1 = {2'b0, rs1[4:0]};
+              Select2 = _R0;
+              G_in = 1'b1;
+            end
           end
         endcase
       end
@@ -537,7 +546,7 @@ always @(*) begin  // Output Logic
       ret = 1'b1;
       Done = 1'b1;
     end
-    F_type: begin
+    F_type: begin //for both move and fcvt this remains correct
         frd_in = 1'b1;
         Done = 1'b1;
     end

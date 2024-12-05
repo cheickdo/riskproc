@@ -26,6 +26,12 @@ assign NV = fcsr[4];
 
 assign rounding = fcsr[7:5];
 
+always@(*)
+    case(operation)
+    4: result = fcvt_out;
+    default:;
+    endcase
+
 //operation instantiations
 fpadd fpu0(
     .clk(clk),

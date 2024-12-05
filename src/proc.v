@@ -297,9 +297,9 @@ always @(*) begin  // Output Logic
           7'b1111000: begin //convert integer to float
             Select1 = {2'b0, rs1[4:0]};
             Select2 = _R0;
-            fop = 0;
-            //fpSel = 1'b1;
-            //G_in = 1'b1;
+            fop = 4;
+            fpSel = 1'b1;
+            G_in = 1'b1;
           end
         endcase
       end
@@ -420,6 +420,7 @@ always @(*) begin  // Output Logic
         endcase
       end
       
+      /*
       F_type: begin 
         case (funct7)
           7'b1111000: begin //convert integer to float
@@ -429,7 +430,7 @@ always @(*) begin  // Output Logic
             G_in = 1'b1;
           end
         endcase
-      end
+      end*/
       default: ;
     endcase
 
@@ -535,6 +536,10 @@ always @(*) begin  // Output Logic
       pc_in = 1'b1;
       ret = 1'b1;
       Done = 1'b1;
+    end
+    F_type: begin
+        frd_in = 1'b1;
+        Done = 1'b1;
     end
     default: ;
   endcase
@@ -688,19 +693,23 @@ else begin
   PCSrc = mtvec;
 end
 always@(*)
-  case(width)
-  2'b00: Sum = Sum_full;
-  2'b01: begin
-    if (!zero_extend) Sum = {{16{Sum_half[15]}},Sum_half};
-    else Sum = {16'b0,Sum_half};
+  if (fpSel) begin
+    Sum = fSum;
   end
-  2'b10: begin
-    if (!zero_extend) Sum = {{24{Sum_byte[7]}},Sum_byte};
-    else Sum = {24'b0,Sum_byte};
+  else begin
+    case(width)
+    2'b00: Sum = Sum_full;
+    2'b01: begin
+      if (!zero_extend) Sum = {{16{Sum_half[15]}},Sum_half};
+      else Sum = {16'b0,Sum_half};
+    end
+    2'b10: begin
+      if (!zero_extend) Sum = {{24{Sum_byte[7]}},Sum_byte};
+      else Sum = {24'b0,Sum_byte};
+    end
+    default: Sum = 2'bxx;
+    endcase
   end
-  default: Sum = 2'bxx;
-  endcase
-
 // alu TODO seperate into own module
 
 assign product = $unsigned(BusWires1) * $unsigned(BusWires2);

@@ -58,13 +58,11 @@ The implementation currently only supports machine mode execution
 |fmv.w.x    |1010011    |000    |111100000000|
 |fmv.x.w    |1010011    |000    |111000000000|
 
+TODO
 |fcvt.s.wu  |1010011    |N/A    |110100000001|
 
 |fcvt.w.s   |1010011    |N/A    |110000000000|
 |fcvt.wu.s  |1010011    |N/A    |110000000001|
-TODO
-
-
 
 |fclass.s|||
 |flw|||

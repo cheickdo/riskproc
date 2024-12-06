@@ -57,8 +57,9 @@ async def proc_simple_test(dut):
 
     print("Starting test!")
 
-    await RisingEdge(dut.clk)
 
+    await RisingEdge(dut.clk)
+    
     #check memory values within dut
     #for i in range(len(loadtest)):
     #    assert dut.mem0.my_mem[i] == loadtest[i]
@@ -69,9 +70,10 @@ async def proc_simple_test(dut):
     await RisingEdge(dut.clk)
     dut.resetn.value = 1
     await RisingEdge(dut.clk)
-
-    
-    for i in range(500):
+    for i in range(50):
+        await RisingEdge(dut.clk)
+    '''
+    for i in range(50):
         #val = random.randint(0, 1)
         #dut.d.value = val  # Assign the random value val to the input port d
 
@@ -81,18 +83,7 @@ async def proc_simple_test(dut):
         #assert dut.q.value == expected_val, f"output q was incorrect on the {i}th cycle"
         #expected_val = val # Save random value for next RisingEdge
 
-    #assert dut.mem0.my_mem[0] == 9
-    # Check the final input on the next clock
-    #print(dut.mem0.my_mem[39].value)
-    #print(dut.mem0.my_mem[40].value)
-    #print(dut.mem0.my_mem[41].value)
-    #print(dut.mem0.my_mem[42].value)
-    #print(dut.mem0.my_mem[43].value)
-    #print(dut.mem0.my_mem[44].value)
-    #print(dut.mem0.my_mem[45].value)
-    #print(dut.mem0.my_mem[46].value)
-    #print(dut.mem0.my_mem[47].value)
-
+    '''
 
     print("Test complete")
 

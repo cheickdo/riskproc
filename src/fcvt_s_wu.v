@@ -14,14 +14,14 @@ reg [5:0] a;
 reg [5:0] k;
 reg [7:0] exp;
 
-assign s_out = rs1[31];
-assign a = log(rs1[30:0]);
+assign s_out = 1'b0;
+assign a = log(rs1);
 assign mantissa = rs1 << k;
-assign exp = 127 + a - 1;
-assign k = 24 - a;
+assign exp = 127 + a;
+assign k = 23 - a;
 
 always@(*) begin
-    sig = s_out ? ~rs1 + 1 : rs1;
+    //sig = s_out ? ~rs1 + 1 : rs1;
     if (rs1[30:0]==0) begin
         out = {s_out ,31'b0000000000000000000000000000000};
     end

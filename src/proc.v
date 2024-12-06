@@ -351,6 +351,14 @@ always @(*) begin  // Output Logic
           end
         endcase
       end
+
+      FSW_type: begin //store floating
+        Select1 = {2'b0, rs2[4:0]};
+        Select2 = _R0;
+        fBusSel = 1'b1;
+        dout_in = 1'b1;
+      end
+
       default: ;
     endcase
 
@@ -468,18 +476,20 @@ always @(*) begin  // Output Logic
         endcase
       end
       
-      /*
-      F_type: begin 
-        case (funct7)
-          7'b1111000: begin //convert integer to float
-            Select1 = {2'b0, rs1[4:0]};
-            Select2 = _R0;
-            fpSel = 1'b1;
+      FLW_type: begin //load floating
+            //ADDR_in = 1'b1;
+            width = 2'b00;
+            load = 1'b1;
             G_in = 1'b1;
-          end
-        endcase
-      end*/
-      default: ;
+            din_in = 1'b1;
+      end
+
+      FSW_type: begin //store
+        Imm = 1'b1;
+        Select1 = {2'b0, rs1[4:0]};
+        G_in = 1'b1;
+        W_D = 1'b1;
+      end
     endcase
 
     write_back:  // define write_back
@@ -602,6 +612,20 @@ always @(*) begin  // Output Logic
           rd_in = 1'b1;
         end
       endcase
+    end
+
+    FLW_type: begin //load floating
+      frd_in = 1'b1;
+      Done = 1'b1;
+      //din_in = 1'b1;
+    end
+
+    FSW_type: begin //store 
+      width = 2'b00;
+      //load = 1'b1;
+      //G_in = 1'b1;
+      load = 1'b1;
+      Done = 1'b1; 
     end
     default: ;
   endcase
@@ -935,13 +959,15 @@ always @(*)
   always @(*)
   if (Imm) begin
     case (opcode) 
-      I_type_1: BusWires2 = {{21{I_Imm[11]}},I_Imm}; //TODO might want to sign extend this
+      I_type_1: BusWires2 = {{21{I_Imm[11]}},I_Imm}; 
       I_type_2: BusWires2 = {{21{I_Imm[11]}},I_Imm};
       S_type: BusWires2 = {21'b0, S_Imm};
       UJ_type: BusWires2 = {{12{UJ_Imm[20]}},UJ_Imm};
       SB_type: BusWires2 = {{21{I_Imm}},I_Imm};
       U_type: BusWires2 = {{12{U_Imm}},U_Imm};
       U2_type: BusWires2 = {{12{U_Imm}},U_Imm};
+      FLW_type: BusWires2 = {{21{I_Imm[11]}},I_Imm};
+      FSW_type: BusWires2 = {21'b0, S_Imm};
       B_type: begin
         if ((funct3 == 3'b110) | (funct3 == 3'b111)) BusWires2 = {21'b0, B_Imm};
         else BusWires2 = {{21{B_Imm[11]}}, B_Imm};

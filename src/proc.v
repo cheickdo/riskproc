@@ -317,8 +317,14 @@ always @(*) begin  // Output Logic
               G_in = 1'b1;
             end
           end
-          7'b1110000: begin //move integer to float
-            if (rs2 == 5'b00000) begin
+          7'b1110000: begin 
+            if (funct3 == 3'b001) begin //fclass
+              fop = 8;
+              fpSel = 1'b1;
+            end
+            else begin
+            end
+            if (rs2 == 5'b00000) begin //move float to integer
               fBusSel = 1'b1;
               Select1 = {2'b0, rs1[4:0]};
               Select2 = _R0;
@@ -582,20 +588,20 @@ always @(*) begin  // Output Logic
     F_type: begin //for both move and fcvt this remains correct
         Done = 1'b1;
         
-        case(funct7)
-          7'b1101000: begin
-            frd_in = 1'b1;
-          end
-          7'b1111000: begin
-            frd_in = 1'b1;
-          end
-          7'b1110000: begin
-            rd_in = 1'b1;
-          end
-          7'b1100000: begin
-            rd_in = 1'b1;
-          end
-        endcase
+      case(funct7)
+        7'b1101000: begin
+          frd_in = 1'b1;
+        end
+        7'b1111000: begin
+          frd_in = 1'b1;
+        end
+        7'b1110000: begin 
+          rd_in = 1'b1;
+        end
+        7'b1100000: begin
+          rd_in = 1'b1;
+        end
+      endcase
     end
     default: ;
   endcase

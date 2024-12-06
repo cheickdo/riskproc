@@ -10,7 +10,7 @@ VERILOG_SOURCES +=$(PWD)/../src/top.v $(PWD)/../src/memory.v $(PWD)/../src/regar
 VERILOG_SOURCES += $(PWD)/../src/interrupt_ctrl.v  $(PWD)/../src/counter.v $(PWD)/../src/fpu.v
 VERILOG_SOURCES += $(PWD)/../src/fmul.v $(PWD)/../src/fpadd.v  $(PWD)/../src/fdiv.v  $(PWD)/../src/fsqrt.v  $(PWD)/../src/fcvt_s_w.v $(PWD)/../src/fcvt_s_wu.v  
 VERILOG_SOURCES += $(PWD)/../src/fcvt_w_s.v $(PWD)/../src/fcvt_wu_s.v  $(PWD)/../src/fclass.v $(PWD)/../src/fmax.v $(PWD)/../src/fmin.v  
-VERILOG_SOURCES += $(PWD)/../src/fsgnjx_s.v $(PWD)/../src/fsgnj_s.v  $(PWD)/../src/fsgnjn_s.v
+VERILOG_SOURCES += $(PWD)/../src/fsgnjx_s.v $(PWD)/../src/fsgnj_s.v  $(PWD)/../src/fsgnjn_s.v $(PWD)/../src/flt.v $(PWD)/../src/fle.v  $(PWD)/../src/feq.v
 
 TOPLEVEL = top
 

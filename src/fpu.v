@@ -13,7 +13,7 @@ parameter FLEN = 32;
 reg [FLEN-1:0] G;
 
 wire [FLEN-1:0] fpadd_out, fmul_out, fdiv_out, fpsqrt_out, fcvt_s_w_out, fcvt_s_wu_out, fcvt_w_s_out, fcvt_wu_s_out, fclass_out, fmin_out, fmax_out;
-wire [FLEN-1:0] fsgnj_s_out, fsgnjn_s_out, fsgnjx_s_out;
+wire [FLEN-1:0] fsgnj_s_out, fsgnjn_s_out, fsgnjx_s_out, fle_out, flt_out, feq_out;
 
 wire NX, UF, OF, DZ, NV;
 wire [2:0] rounding;
@@ -39,6 +39,9 @@ always@(*)
         11: result = fsgnj_s_out;
         12: result = fsgnjn_s_out;
         13: result = fsgnjx_s_out;
+        14: result = flt_out;
+        15: result = fle_out;
+        16: result = feq_out;
         default:;
     endcase
 
@@ -154,6 +157,29 @@ fsgnjx_s fpu13(
     .out(fsgnjx_s_out)
 );
 
+flt fpu14(
+    .clk(clk),
+    .resetn(resetn),
+    .rs1(rs1),
+    .rs2(rs2),
+    .out(flt_out)
+);
+
+fle fpu15(
+    .clk(clk),
+    .resetn(resetn),
+    .rs1(rs1),
+    .rs2(rs2),
+    .out(fle_out)
+);
+
+feq fpu16(
+    .clk(clk),
+    .resetn(resetn),
+    .rs1(rs1),
+    .rs2(rs2),
+    .out(feq_out)
+);
 
 // Dump waves
 initial begin

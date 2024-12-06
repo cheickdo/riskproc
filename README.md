@@ -64,12 +64,14 @@ The implementation currently only supports machine mode execution
 |flw        |0000111    |010    |N/A         |
 |fsw        |0100111    |010    |N/A         |
 
+|fmax       |1010011    |001    |0010100     |
+|fmin       |1010011    |000    |0010100     |
+
 ### TODO
 |feq|||
 |flt|||
 |fle|||
-|fmax|||
-|fmin|||
+
 |fsgnjx.s|||
 |fsgnjn.s|||
 |fsgnj.s|||

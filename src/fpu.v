@@ -12,7 +12,7 @@ parameter FLEN = 32;
 
 reg [FLEN-1:0] G;
 
-wire [FLEN-1:0] fpadd_out, fmul_out, fdiv_out, fpsqrt_out, fcvt_s_w_out, fcvt_s_wu_out, fcvt_w_s_out, fcvt_wu_s_out, fclass_out;
+wire [FLEN-1:0] fpadd_out, fmul_out, fdiv_out, fpsqrt_out, fcvt_s_w_out, fcvt_s_wu_out, fcvt_w_s_out, fcvt_wu_s_out, fclass_out, fmin_out, fmax_out;
 
 wire NX, UF, OF, DZ, NV;
 wire [2:0] rounding;
@@ -28,12 +28,14 @@ assign rounding = fcsr[7:5];
 
 always@(*)
     case(operation)
-    4: result = fcvt_s_w_out;
-    5: result = fcvt_s_wu_out;
-    6: result = fcvt_w_s_out;
-    7: result = fcvt_wu_s_out;
-    8: result = fclass_out;
-    default:;
+        4: result = fcvt_s_w_out;
+        5: result = fcvt_s_wu_out;
+        6: result = fcvt_w_s_out;
+        7: result = fcvt_wu_s_out;
+        8: result = fclass_out;
+        9: result = fmin_out;
+        10: result = fmax_out;
+        default:;
     endcase
 
 //operation instantiations
@@ -107,6 +109,21 @@ fclass fpu8(
     .rs1(rs1),
     .rs2(rs2),
     .out(fclass_out)
+);
+fmin fpu9(
+    .clk(clk),
+    .resetn(resetn),
+    .rs1(rs1),
+    .rs2(rs2),
+    .out(fmin_out)
+);
+
+fmax fpu10(
+    .clk(clk),
+    .resetn(resetn),
+    .rs1(rs1),
+    .rs2(rs2),
+    .out(fmax_out)
 );
 
 // Dump waves

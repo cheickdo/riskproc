@@ -294,6 +294,17 @@ always @(*) begin  // Output Logic
 
       F_type: begin 
         case (funct7)
+          7'b0010000: begin
+              Select1 = {2'b0, rs1[4:0]};
+              Select2 = {2'b0, rs2[4:0]};
+              //fop = 4;
+              fBusSel = 1'b1;
+              fpSel = 1'b1;
+              G_in = 1'b1;
+              if (funct3 == 0) fop = 11; //fsgnj.s
+              if (funct3 == 1) fop = 12; //fsgnjn.s
+              if (funct3 == 2) fop = 13; //fsgnjx.s
+          end
           7'b0010100: begin
               Select1 = {2'b0, rs1[4:0]};
               Select2 = {2'b0, rs2[4:0]};
@@ -609,6 +620,9 @@ always @(*) begin  // Output Logic
         Done = 1'b1;
         
       case(funct7)
+        7'b0010000: begin
+          frd_in = 1'b1;
+        end
         7'b0010100: begin
           frd_in = 1'b1;
         end

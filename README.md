@@ -63,18 +63,16 @@ The implementation currently only supports machine mode execution
 |fclass.s   |1010011    |001    |111000000000|
 |flw        |0000111    |010    |N/A         |
 |fsw        |0100111    |010    |N/A         |
-
 |fmax       |1010011    |001    |0010100     |
 |fmin       |1010011    |000    |0010100     |
 
+|fsgnj.s    |1010011    |000    |0010000|
+|fsgnjn.s   |1010011    |001    |0010000|
+|fsgnjx.s   |1010011    |010    |0010000|
 ### TODO
 |feq|||
 |flt|||
 |fle|||
-
-|fsgnjx.s|||
-|fsgnjn.s|||
-|fsgnj.s|||
 
 |fadd.s|||
 |fsub.s|||

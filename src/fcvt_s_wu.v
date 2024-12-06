@@ -1,4 +1,4 @@
-module fcvt(
+module fcvt_s_wu(
     input clk,
     input resetn,
     input [31:0] rs1,
@@ -15,7 +15,7 @@ reg [5:0] k;
 reg [7:0] exp;
 
 assign s_out = rs1[31];
-assign a = log(rs1);
+assign a = log(rs1[30:0]);
 assign mantissa = rs1 << k;
 assign exp = 127 + a - 1;
 assign k = 24 - a;
@@ -33,20 +33,6 @@ end
 // Dump waves
 initial begin
     $dumpfile("dump.vcd");
-    $dumpvars(1, fcvt);
+    $dumpvars(1, fcvt_s_wu);
 end
 endmodule
-
-//big combinational block
-function integer log;
-    input [size-1:0] in;
-    integer i;
-
-    parameter size = 32;
-
-    begin
-    log = 0;
-    for(i=0; 2**i < in; i = i+1)
-    log = i+1;
-    end
-endfunction

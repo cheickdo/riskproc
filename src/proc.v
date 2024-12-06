@@ -20,7 +20,7 @@ reg [2:0] Tstep_Q, Tstep_D;
 reg signed [XLEN-1:0] BusWires1;
 reg [XLEN-1:0] BusWires2, PCSrc;
 reg [5:0] Select1, Select2;  // BusWires selector
-reg fpSel;
+reg fpSel, fBusSel;
 
 reg [XLEN-1:0] Sum_full;
 reg [XLEN-1:0] fSum;
@@ -184,6 +184,7 @@ always @(*) begin  // Output Logic
   zero_extend = 1'b0;
   ret = 1'b0;
   fpSel = 1'b0;
+  fBusSel = 1'b0;
   width = 2'b00;
 
   case (Tstep_Q)
@@ -211,7 +212,6 @@ always @(*) begin  // Output Logic
         else begin
           case (funct3)
             0: begin //add 
-              if (funct7[5] == 0)
               if (funct7[5] == 1) AddSub = 1'b1;
             end 
             default: begin
@@ -302,9 +302,32 @@ always @(*) begin  // Output Logic
               fpSel = 1'b1;
               G_in = 1'b1;
             end
+            else if (rs2 == 5'b00001) begin
+              Select1 = {2'b0, rs1[4:0]};
+              Select2 = _R0;
+              fop = 5;
+              fpSel = 1'b1;
+              G_in = 1'b1;              
+            end
+          end
+          7'b1111000: begin //move integer to float
+            if (rs2 == 5'b00000) begin
+              Select1 = {2'b0, rs1[4:0]};
+              Select2 = _R0;
+              G_in = 1'b1;
+            end
           end
           7'b1110000: begin //move integer to float
             if (rs2 == 5'b00000) begin
+              fBusSel = 1'b1;
+              Select1 = {2'b0, rs1[4:0]};
+              Select2 = _R0;
+              G_in = 1'b1;
+            end
+          end
+          7'b1100000: begin //fcvt.w.s TODO
+            if (rs2 == 5'b00000) begin
+              fBusSel = 1'b1;
               Select1 = {2'b0, rs1[4:0]};
               Select2 = _R0;
               G_in = 1'b1;
@@ -547,8 +570,19 @@ always @(*) begin  // Output Logic
       Done = 1'b1;
     end
     F_type: begin //for both move and fcvt this remains correct
-        frd_in = 1'b1;
         Done = 1'b1;
+        
+        case(funct7)
+          7'b1101000: begin
+            frd_in = 1'b1;
+          end
+          7'b1111000: begin
+            frd_in = 1'b1;
+          end
+          7'b1110000: begin
+            rd_in = 1'b1;
+          end
+        endcase
     end
     default: ;
   endcase
@@ -800,43 +834,84 @@ regn reg_G (
 
 // define the internal processor bus
 always @(*)
-  case (Select1)
-    _R0: BusWires1 = r0;
-    _R1: BusWires1 = r1;
-    _R2: BusWires1 = r2;
-    _R3: BusWires1 = r3;
-    _R4: BusWires1 = r4;
-    _R5: BusWires1 = r5;
-    _R6: BusWires1 = r6;
-    _R7: BusWires1 = r7;
-    _R8: BusWires1 = r8;
-    _R9: BusWires1 = r9;
-    _R10: BusWires1 = r10;
-    _R11: BusWires1 = r11;
-    _R12: BusWires1 = r12;
-    _R13: BusWires1 = r13;
-    _R14: BusWires1 = r14;
-    _R15: BusWires1 = r15;
-    _R16: BusWires1 = r16;
-    _R17: BusWires1 = r17;
-    _R18: BusWires1 = r18;
-    _R19: BusWires1 = r19;
-    _R20: BusWires1 = r20;
-    _R21: BusWires1 = r21;
-    _R22: BusWires1 = r22;
-    _R23: BusWires1 = r23;
-    _R24: BusWires1 = r24;
-    _R25: BusWires1 = r25;
-    _R26: BusWires1 = r26;
-    _R27: BusWires1 = r27;
-    _R28: BusWires1 = r28;
-    _R29: BusWires1 = r29;
-    _R30: BusWires1 = r30;
-    _R31: BusWires1 = r31;
-    _PC: BusWires1 = pc-4; //pc has been incremented we want to select the old one (will have to change in pipelined)
-    //_G: BusWires1
-    default: BusWires1 = 32'bx;
-  endcase
+  if (fBusSel == 1'b1) begin
+        case (Select1)
+      _R0: BusWires1 = f0;
+      _R1: BusWires1 = f1;
+      _R2: BusWires1 = f2;
+      _R3: BusWires1 = f3;
+      _R4: BusWires1 = f4;
+      _R5: BusWires1 = f5;
+      _R6: BusWires1 = f6;
+      _R7: BusWires1 = f7;
+      _R8: BusWires1 = f8;
+      _R9: BusWires1 = f9;
+      _R10: BusWires1 = f10;
+      _R11: BusWires1 = f11;
+      _R12: BusWires1 = f12;
+      _R13: BusWires1 = f13;
+      _R14: BusWires1 = f14;
+      _R15: BusWires1 = f15;
+      _R16: BusWires1 = f16;
+      _R17: BusWires1 = f17;
+      _R18: BusWires1 = f18;
+      _R19: BusWires1 = f19;
+      _R20: BusWires1 = f20;
+      _R21: BusWires1 = f21;
+      _R22: BusWires1 = f22;
+      _R23: BusWires1 = f23;
+      _R24: BusWires1 = f24;
+      _R25: BusWires1 = f25;
+      _R26: BusWires1 = f26;
+      _R27: BusWires1 = f27;
+      _R28: BusWires1 = f28;
+      _R29: BusWires1 = f29;
+      _R30: BusWires1 = f30;
+      _R31: BusWires1 = f31;
+      _PC: BusWires1 = pc-4; //pc has been incremented we want to select the old one (will have to change in pipelined)
+      //_G: BusWires1
+      default: BusWires1 = 32'bx;
+    endcase
+  end
+  else begin
+    case (Select1)
+      _R0: BusWires1 = r0;
+      _R1: BusWires1 = r1;
+      _R2: BusWires1 = r2;
+      _R3: BusWires1 = r3;
+      _R4: BusWires1 = r4;
+      _R5: BusWires1 = r5;
+      _R6: BusWires1 = r6;
+      _R7: BusWires1 = r7;
+      _R8: BusWires1 = r8;
+      _R9: BusWires1 = r9;
+      _R10: BusWires1 = r10;
+      _R11: BusWires1 = r11;
+      _R12: BusWires1 = r12;
+      _R13: BusWires1 = r13;
+      _R14: BusWires1 = r14;
+      _R15: BusWires1 = r15;
+      _R16: BusWires1 = r16;
+      _R17: BusWires1 = r17;
+      _R18: BusWires1 = r18;
+      _R19: BusWires1 = r19;
+      _R20: BusWires1 = r20;
+      _R21: BusWires1 = r21;
+      _R22: BusWires1 = r22;
+      _R23: BusWires1 = r23;
+      _R24: BusWires1 = r24;
+      _R25: BusWires1 = r25;
+      _R26: BusWires1 = r26;
+      _R27: BusWires1 = r27;
+      _R28: BusWires1 = r28;
+      _R29: BusWires1 = r29;
+      _R30: BusWires1 = r30;
+      _R31: BusWires1 = r31;
+      _PC: BusWires1 = pc-4; //pc has been incremented we want to select the old one (will have to change in pipelined)
+      //_G: BusWires1
+      default: BusWires1 = 32'bx;
+    endcase
+  end
 
   always @(*)
   if (Imm) begin
@@ -854,44 +929,82 @@ always @(*)
       end
       default: ;
     endcase
-
   end
   else begin
-    case (Select2)
-      _R0: BusWires2 = r0;
-      _R1: BusWires2 = r1;
-      _R2: BusWires2 = r2;
-      _R3: BusWires2 = r3;
-      _R4: BusWires2 = r4;
-      _R5: BusWires2 = r5;
-      _R6: BusWires2 = r6;
-      _R7: BusWires2 = r7;
-      _R8: BusWires2 = r8;
-      _R9: BusWires2 = r9;
-      _R10: BusWires2 = r10;
-      _R11: BusWires2 = r11;
-      _R12: BusWires2 = r12;
-      _R13: BusWires2 = r13;
-      _R14: BusWires2 = r14;
-      _R15: BusWires2 = r15;
-      _R16: BusWires2 = r16;
-      _R17: BusWires2 = r17;
-      _R18: BusWires2 = r18;
-      _R19: BusWires2 = r19;
-      _R20: BusWires2 = r20;
-      _R21: BusWires2 = r21;
-      _R22: BusWires2 = r22;
-      _R23: BusWires2 = r23;
-      _R24: BusWires2 = r24;
-      _R25: BusWires2 = r25;
-      _R26: BusWires2 = r26;
-      _R27: BusWires2 = r27;
-      _R28: BusWires2 = r28;
-      _R29: BusWires2 = r29;
-      _R30: BusWires2 = r30;
-      _R31: BusWires2 = r31;
-      default: BusWires2 = 32'bx;
-    endcase
+    if (fBusSel == 1'b1) begin
+        case (Select2)
+        _R0: BusWires2 = f0;
+        _R1: BusWires2 = f1;
+        _R2: BusWires2 = f2;
+        _R3: BusWires2 = f3;
+        _R4: BusWires2 = f4;
+        _R5: BusWires2 = f5;
+        _R6: BusWires2 = f6;
+        _R7: BusWires2 = f7;
+        _R8: BusWires2 = f8;
+        _R9: BusWires2 = f9;
+        _R10: BusWires2 = f10;
+        _R11: BusWires2 = f11;
+        _R12: BusWires2 = f12;
+        _R13: BusWires2 = f13;
+        _R14: BusWires2 = f14;
+        _R15: BusWires2 = f15;
+        _R16: BusWires2 = f16;
+        _R17: BusWires2 = f17;
+        _R18: BusWires2 = f18;
+        _R19: BusWires2 = f19;
+        _R20: BusWires2 = f20;
+        _R21: BusWires2 = f21;
+        _R22: BusWires2 = f22;
+        _R23: BusWires2 = f23;
+        _R24: BusWires2 = f24;
+        _R25: BusWires2 = f25;
+        _R26: BusWires2 = f26;
+        _R27: BusWires2 = f27;
+        _R28: BusWires2 = f28;
+        _R29: BusWires2 = f29;
+        _R30: BusWires2 = f30;
+        _R31: BusWires2 = f31;
+        default: BusWires2 = 32'bx;
+      endcase
+    end
+    else begin
+      case (Select2)
+        _R0: BusWires2 = r0;
+        _R1: BusWires2 = r1;
+        _R2: BusWires2 = r2;
+        _R3: BusWires2 = r3;
+        _R4: BusWires2 = r4;
+        _R5: BusWires2 = r5;
+        _R6: BusWires2 = r6;
+        _R7: BusWires2 = r7;
+        _R8: BusWires2 = r8;
+        _R9: BusWires2 = r9;
+        _R10: BusWires2 = r10;
+        _R11: BusWires2 = r11;
+        _R12: BusWires2 = r12;
+        _R13: BusWires2 = r13;
+        _R14: BusWires2 = r14;
+        _R15: BusWires2 = r15;
+        _R16: BusWires2 = r16;
+        _R17: BusWires2 = r17;
+        _R18: BusWires2 = r18;
+        _R19: BusWires2 = r19;
+        _R20: BusWires2 = r20;
+        _R21: BusWires2 = r21;
+        _R22: BusWires2 = r22;
+        _R23: BusWires2 = r23;
+        _R24: BusWires2 = r24;
+        _R25: BusWires2 = r25;
+        _R26: BusWires2 = r26;
+        _R27: BusWires2 = r27;
+        _R28: BusWires2 = r28;
+        _R29: BusWires2 = r29;
+        _R30: BusWires2 = r30;
+        _R31: BusWires2 = r31;
+        default: BusWires2 = 32'bx;
+      endcase
+    end
   end
 
 regn #(

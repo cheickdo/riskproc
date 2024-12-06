@@ -45,6 +45,7 @@ The implementation currently only supports machine mode execution
 |jalr       |1100111    |0x0    |      |
 |lui        |0110111    |       |      |
 |auipc      |0010111    |       |      |
+|mtvec      |1110011    |       |      |
 |mul        |0110011    |0x0    |0x01  |
 |mulh       |0110011    |0x1    |0x01  |
 |mulsu      |0110011    |0x2    |0x01  |
@@ -54,7 +55,40 @@ The implementation currently only supports machine mode execution
 |rem        |0110011    |0x6    |0x01  |
 |remu       |0110011    |0x7    |0x01  |
 |fcvt.s.w   |1010011    |N/A    |110100000000|
+|fmv.w.x    |1010011    |000    |111100000000|
 |fmv.x.w    |1010011    |000    |111000000000|
+
+|fcvt.s.wu  |1010011    |N/A    |110100000001|
+
+|fcvt.w.s   |1010011    |N/A    |110000000000|
+|fcvt.wu.s  |1010011    |N/A    |110000000001|
+TODO
+
+
+
+|fclass.s|||
+|flw|||
+|fsw|||
+
+
+|feq|||
+|flt|||
+|fle|||
+|fmax|||
+|fmin|||
+
+|fsgnjx.s|||
+|fsgnjn.s|||
+|fsgnj.s|||
+|fadd.s|||
+|fsub.s|||
+|fmul.s|||
+|fdiv.s|||
+|fmadd.s|||
+|fmsub.s|||
+|fnmsub.s|||
+|fnmadd.s|||
+|fsqrt.s|||
 
 ## Table2. System level instructions (implementation not completed)
 
@@ -83,6 +117,7 @@ The implementation currently only supports machine mode execution
 |0|5|store address misaligned|
 
 **Add RV32F support**
+**Add context switching**
 
 **Add dynamic pipelining (OoO execution)**
 

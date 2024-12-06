@@ -12,7 +12,7 @@ parameter FLEN = 32;
 
 reg [FLEN-1:0] G;
 
-wire [FLEN-1:0] fpadd_out, fmul_out, fdiv_out, fpsqrt_out, fcvt_out;
+wire [FLEN-1:0] fpadd_out, fmul_out, fdiv_out, fpsqrt_out, fcvt_s_w_out, fcvt_s_wu_out;
 
 wire NX, UF, OF, DZ, NV;
 wire [2:0] rounding;
@@ -28,7 +28,8 @@ assign rounding = fcsr[7:5];
 
 always@(*)
     case(operation)
-    4: result = fcvt_out;
+    4: result = fcvt_s_w_out;
+    5: result = fcvt_s_wu_out;
     default:;
     endcase
 
@@ -65,12 +66,20 @@ fsqrt fpu3(
     .out(fpsqrt_out)
 );
 
-fcvt fpu4(
+fcvt_s_w fpu4(
     .clk(clk),
     .resetn(resetn),
     .rs1(rs1),
     .rs2(rs2),
-    .out(fcvt_out)
+    .out(fcvt_s_w_out)
+);
+
+fcvt_s_wu fpu5(
+    .clk(clk),
+    .resetn(resetn),
+    .rs1(rs1),
+    .rs2(rs2),
+    .out(fcvt_s_wu_out)
 );
 
 // Dump waves

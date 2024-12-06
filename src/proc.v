@@ -327,9 +327,19 @@ always @(*) begin  // Output Logic
           end
           7'b1100000: begin //fcvt.w.s TODO
             if (rs2 == 5'b00000) begin
-              fBusSel = 1'b1;
               Select1 = {2'b0, rs1[4:0]};
               Select2 = _R0;
+              fop = 6;
+              fpSel = 1'b1;
+              fBusSel = 1'b1;
+              G_in = 1'b1;
+            end
+            if (rs2 == 5'b00001) begin
+              Select1 = {2'b0, rs1[4:0]};
+              Select2 = _R0;
+              fop = 7;
+              fpSel = 1'b1;
+              fBusSel = 1'b1;
               G_in = 1'b1;
             end
           end
@@ -580,6 +590,9 @@ always @(*) begin  // Output Logic
             frd_in = 1'b1;
           end
           7'b1110000: begin
+            rd_in = 1'b1;
+          end
+          7'b1100000: begin
             rd_in = 1'b1;
           end
         endcase

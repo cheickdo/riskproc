@@ -14,13 +14,14 @@ parameter FLEN = 32;
 wire [XLEN-1:0] R_in;  // r0, ..., r7 register enables
 reg rs1_in, rs2_in, rd_in, frd_in, IR_in, ADDR_in, Done, dout_in, 
   load, din_in, G_in,F_in, AddSub, Arith, zero_extend, branch,
-    mul_arith, ret, sys_clear;
+    mul_arith, ret, sys_clear, multicycle, count_rst, count_en;
 reg [1:0] width;
 reg [2:0] Tstep_Q, Tstep_D;
 reg signed [XLEN-1:0] BusWires1;
 reg [XLEN-1:0] BusWires2, PCSrc;
 reg [5:0] Select1, Select2;  // BusWires selector
 reg fpSel, fBusSel;
+reg [31:0] fstage;
 
 reg [XLEN-1:0] Sum_full;
 reg [XLEN-1:0] fSum;
@@ -99,7 +100,13 @@ dec3to8 decY (
     .Y (Fp_in)
 );  // produce r0 - r31 register enables
 
-parameter fetch = 3'b000,mem_wait = 3'b001, decode = 3'b010,  exec = 3'b011, access = 3'b100, write_back = 3'b101;
+parameter fetch = 3'b000,mem_wait = 3'b001, decode = 3'b010,  exec = 3'b011, access = 3'b100, write_back = 3'b101, fexec = 3'b110;
+
+// Control FSM flip-flops
+// State Register
+always @(posedge clk)
+  if (!resetn) Tstep_Q <= fetch;
+  else Tstep_Q <= Tstep_D;
 
 // Control FSM state table (Next State Logic). TODO move it to seperate module?
 // Is a function of current state (Tstep_Q) and inputs (run and Done)
@@ -116,12 +123,15 @@ always @(*)
       Tstep_D =  exec;
     end
     exec: begin
-      if (Done) Tstep_D = fetch;
+      if (multicycle) Tstep_D = fexec;
       else Tstep_D = access;
     end
+    fexec: begin
+      if (~multicycle) Tstep_D = access;
+      else Tstep_D = fexec;
+    end
     access: begin
-      if (Done) Tstep_D = fetch;
-      else Tstep_D = write_back;
+      Tstep_D = write_back;
     end
     write_back: begin  // instructions end after this time step
       Tstep_D = fetch;
@@ -186,6 +196,10 @@ always @(*) begin  // Output Logic
   fpSel = 1'b0;
   fBusSel = 1'b0;
   width = 2'b00;
+  fop = 6'b0;
+  multicycle = 1'b0;
+  count_rst = 1'b0;
+  count_en = 1'b1;
 
   case (Tstep_Q)
 
@@ -294,6 +308,26 @@ always @(*) begin  // Output Logic
 
       F_type: begin 
         case (funct7)
+          7'b0000000: begin //floating point add instruction
+              Select1 = {2'b0, rs1[4:0]};
+              Select2 = {2'b0, rs2[4:0]};
+              fop = 0;
+              fBusSel = 1'b1;
+              fpSel = 1'b1;
+              G_in = 1'b1;
+              multicycle = 1'b1;
+              count_rst = 1'b1;
+          end
+          7'b0000100: begin //floating point sub instruction
+              Select1 = {2'b0, rs1[4:0]};
+              Select2 = {2'b0, rs2[4:0]};
+              fop = 1;
+              fBusSel = 1'b1;
+              fpSel = 1'b1;
+              G_in = 1'b1;
+              multicycle = 1'b1;
+              count_rst = 1'b1;
+          end
           7'b1010000: begin
               Select1 = {2'b0, rs1[4:0]};
               Select2 = {2'b0, rs2[4:0]};
@@ -393,6 +427,36 @@ always @(*) begin  // Output Logic
 
       default: ;
     endcase
+    
+    fexec: //multicycle floating point instructions
+      case(opcode)
+        F_type:  
+          case (funct7)
+            7'b0000000: begin //floating point add instruction
+                Select1 = {2'b0, rs1[4:0]};
+                Select2 = {2'b0, rs2[4:0]};
+                fop = 0;
+                fBusSel = 1'b1;
+                fpSel = 1'b1;
+                G_in = 1'b1;
+                if (fstage[4:0] == 2) multicycle = 1'b0;
+                else multicycle = 1'b1;
+                count_en = 1'b1;
+              end
+            7'b0000100: begin //floating point add instruction
+                Select1 = {2'b0, rs1[4:0]};
+                Select2 = {2'b0, rs2[4:0]};
+                fop = 1;
+                fBusSel = 1'b1;
+                fpSel = 1'b1;
+                G_in = 1'b1;
+                if (fstage[4:0] == 2) multicycle = 1'b0;
+                else multicycle = 1'b1;
+                count_en = 1'b1;
+              end
+          endcase
+      endcase
+
 
     access:  // define signals access
     case (opcode)
@@ -628,9 +692,15 @@ always @(*) begin  // Output Logic
       Done = 1'b1;
     end
     F_type: begin //for both move and fcvt this remains correct
-        Done = 1'b1;
+      Done = 1'b1;
         
       case(funct7)
+        7'b0000100: begin
+          frd_in = 1'b1;
+        end
+        7'b0000000: begin
+          frd_in = 1'b1;
+        end
         7'b1010000: begin
           frd_in = 1'b1;
         end
@@ -672,12 +742,6 @@ always @(*) begin  // Output Logic
   endcase
   endcase
 end
-
-// Control FSM flip-flops
-// State Register
-always @(posedge clk)
-  if (!resetn) Tstep_Q <= fetch;
-  else Tstep_Q <= Tstep_D;
 
 regarray regs (/*AUTOINST*/
     // Outputs
@@ -758,6 +822,14 @@ regarray fregs (/*AUTOINST*/
 		 .resetn		(resetn),
 		 .R_in			(Fp_in[31:0]), //must be in order?? 
 		 .clk			(clk));
+
+//multicycle counter
+counter fstage0 (
+  .clk(clk),
+  .resetn(resetn & ~count_rst),
+  .enable(count_en),
+  .out(fstage)
+);
 
 // program counter
 pc_count reg_pc (

@@ -68,14 +68,13 @@ The implementation currently only supports machine mode execution
 |fsgnj.s    |1010011    |000    |0010000|
 |fsgnjn.s   |1010011    |001    |0010000|
 |fsgnjx.s   |1010011    |010    |0010000|
-
-|feq|1010011|010|1010000|
-|flt|1010011|001|1010000|
-|fle|1010011|000|1010000|
+|feq        |1010011    |010    |1010000|
+|flt        |1010011    |001    |1010000|
+|fle        |1010011    |000    |1010000|
+|fadd.s     |1010011    |N/A    |0000000|
+|fsub.s     |1010011    |N/A    |0000100|
 ### TODO
 
-|fadd.s|||
-|fsub.s|||
 |fmul.s|||
 |fdiv.s|||
 |fsqrt.s|||

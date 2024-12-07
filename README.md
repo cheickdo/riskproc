@@ -77,13 +77,10 @@ The implementation currently only supports machine mode execution
 |fdiv.s     |1010011    |000    |0001100|
 |fsqrt.s    |1010011    |000    |010110000000|
 
-### TODO
-
-|fmadd.s|||
-|fmsub.s|||
-|fnmsub.s|||
-|fnmadd.s|||
-
+|fmadd.s|1000011|000| ||
+|fmsub.s|1000111|000||
+|fnmsub.s|1001011|000||
+|fnmadd.s|1001111|000||
 
 ## Table2. System level instructions (implementation not completed)
 
@@ -111,9 +108,13 @@ The implementation currently only supports machine mode execution
 |0|4|load address misaligned|
 |0|5|store address misaligned|
 
-**Add RV32F support**
-**Add context switching**
+### TODO
 
-**Add dynamic pipelining (OoO execution)**
 
-Speculative, Out of Order dynamic pipeline
+
+- Context switching by saving registers
+- Rounding mode encoding in floats
+- Exception generation by floating instructions
+- Complete implementation of system level instructions 
+- Consider NaN in multiply, add and divides
+- Speculative, Out of Order dynamic pipeline

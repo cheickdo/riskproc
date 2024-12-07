@@ -4,6 +4,7 @@ module fpu(
 	input [5:0] operation,
 	input [31:0] rs1,
 	input [31:0] rs2,
+    input [31:0] rs3,
     input [31:0] fcsr,
 	output reg [31:0] result
 );
@@ -13,7 +14,7 @@ parameter FLEN = 32;
 reg [FLEN-1:0] G;
 
 wire [FLEN-1:0] fpadd_out, fmul_out, fdiv_out, fpsqrt_out, fcvt_s_w_out, fcvt_s_wu_out, fcvt_w_s_out, fcvt_wu_s_out, fclass_out, fmin_out, fmax_out;
-wire [FLEN-1:0] fsgnj_s_out, fsgnjn_s_out, fsgnjx_s_out, fle_out, flt_out, feq_out, fsub_out;
+wire [FLEN-1:0] fsgnj_s_out, fsgnjn_s_out, fsgnjx_s_out, fle_out, flt_out, feq_out, fsub_out, fmadd_s_out, fmsub_s_out, fnmadd_s_out, fnmsub_s_out;
 
 wire NX, UF, OF, DZ, NV;
 wire [2:0] rounding;
@@ -47,6 +48,10 @@ always@(*)
         15: result = fle_out;
         16: result = feq_out;
         17: result = fpsqrt_out;
+        18: result = fmadd_s_out;
+        19: result = fmsub_s_out;
+        20: result = fnmadd_s_out;
+        21: result = fnmsub_s_out;
         default:;
     endcase
 
@@ -192,6 +197,42 @@ feq fpu16(
     .rs1(rs1),
     .rs2(rs2),
     .out(feq_out)
+);
+
+fmadd_s fpu18(
+    .clk(clk),
+    .resetn(resetn),
+    .rs1(rs1),
+    .rs2(rs2),
+    .rs3(rs3),
+    .out(fmadd_s_out)
+);
+
+fmadd_s fpu19(
+    .clk(clk),
+    .resetn(resetn),
+    .rs1(rs1),
+    .rs2(rs2),
+    .rs3({~rs3[31], rs3[30:0]}),
+    .out(fmsub_s_out)
+);
+
+fnmadd_s fpu20(
+    .clk(clk),
+    .resetn(resetn),
+    .rs1(rs1),
+    .rs2(rs2),
+    .rs3(rs3),
+    .out(fnmadd_s_out)
+);
+
+fnmadd_s fpu21(
+    .clk(clk),
+    .resetn(resetn),
+    .rs1(rs1),
+    .rs2(rs2),
+    .rs3({~rs3[31], rs3[30:0]}),
+    .out(fnmsub_s_out)
 );
 
 // Dump waves

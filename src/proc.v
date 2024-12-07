@@ -18,8 +18,8 @@ reg rs1_in, rs2_in, rd_in, frd_in, IR_in, ADDR_in, Done, dout_in,
 reg [1:0] width;
 reg [2:0] Tstep_Q, Tstep_D;
 reg signed [XLEN-1:0] BusWires1;
-reg [XLEN-1:0] BusWires2, PCSrc;
-reg [5:0] Select1, Select2;  // BusWires selector
+reg [XLEN-1:0] BusWires2,BusWires3, PCSrc;
+reg [5:0] Select1, Select2, Select3;  // BusWires selector
 reg fpSel, fBusSel;
 reg [31:0] fstage;
 
@@ -35,7 +35,7 @@ wire [64:0] suproduct;
 reg ALU_Cout;  // ALU carry-out
 wire [2:0] funct3;
 wire [6:0] opcode, funct7;
-wire [4:0] rs1, rd, rs2;  // instruction opcode and register operands
+wire [4:0] rs1, rs3, rd, rs2;  // instruction opcode and register operands
 wire [11:0] I_Imm, S_Imm, B_Imm;
 //wire [9:0] J_Imm; //Not sure if this width is correct
 wire [20:0] UJ_Imm;
@@ -81,6 +81,7 @@ assign rd = IR[11:7];
 assign funct3 = IR[14:12];
 assign rs1  = IR[19:15];
 assign rs2 = IR[24:20];
+assign rs3 = IR[31:27];
 assign funct7 = IR[31:25];
 assign I_Imm = IR[31:20];
 assign S_Imm = {IR[31:25], IR[11:7]};
@@ -144,7 +145,7 @@ parameter R_type = 7'b0110011, I_type_1=7'b0000011, I_type_2 = 7'b0010011;
 parameter SB_type = 7'b1100111, S_type = 7'b0100011, U_type = 7'b0110111, UJ_type=7'b1101111, U2_type = 7'b0010111, B_type = 7'b1100011;
 parameter SYSTEM_type = 7'b1110011;
 parameter FLW_type = 7'b0000111, FSW_type = 7'b0100111, FMADD_type = 7'b1000011, FMSUB_type = 7'b1000111,
-    FNM_SUB_type = 7'b1001011, FNMADD_type = 7'b1001111, F_type = 7'b1010011;
+    FNMSUB_type = 7'b1001011, FNMADD_type = 7'b1001111, F_type = 7'b1010011;
 
 //arithmetic instruction funct3
 parameter SLL = 3'b001, XOR = 3'b100, SRL = 3'b101, SRA = 3'b101, OR = 3'b110, AND = 3'b111, SLT = 3'b010, SLTU = 3'b011;
@@ -178,6 +179,7 @@ always @(*) begin  // Output Logic
   ADDR_in   = 1'b0;
   Select1    = 6'bxxxxx;
   Select2 = 6'bxxxxx;
+  Select3 = 6'bxxxxx;
   Arith = 1'b0;
   mul_arith = 1'b0;
   AddSub    = 1'b0;
@@ -455,6 +457,54 @@ always @(*) begin  // Output Logic
         dout_in = 1'b1;
       end
 
+      FMADD_type: begin
+        Select1 = {2'b0, rs1[4:0]};
+        Select2 = {2'b0, rs2[4:0]};
+        Select3 = {2'b0, rs3[4:0]};
+        fop = 18;
+        fBusSel = 1'b1;
+        fpSel = 1'b1;
+        G_in = 1'b1;
+        multicycle = 1'b1;
+        count_rst = 1'b1;
+      end
+
+      FMSUB_type: begin
+        Select1 = {2'b0, rs1[4:0]};
+        Select2 = {2'b0, rs2[4:0]};
+        Select3 = {2'b0, rs3[4:0]};
+        fop = 19;
+        fBusSel = 1'b1;
+        fpSel = 1'b1;
+        G_in = 1'b1;
+        multicycle = 1'b1;
+        count_rst = 1'b1;
+      end
+
+      FNMADD_type: begin
+        Select1 = {2'b0, rs1[4:0]};
+        Select2 = {2'b0, rs2[4:0]};
+        Select3 = {2'b0, rs3[4:0]};
+        fop = 20;
+        fBusSel = 1'b1;
+        fpSel = 1'b1;
+        G_in = 1'b1;
+        multicycle = 1'b1;
+        count_rst = 1'b1;
+      end
+
+      FNMSUB_type: begin
+        Select1 = {2'b0, rs1[4:0]};
+        Select2 = {2'b0, rs2[4:0]};
+        Select3 = {2'b0, rs3[4:0]};
+        fop = 21;
+        fBusSel = 1'b1;
+        fpSel = 1'b1;
+        G_in = 1'b1;
+        multicycle = 1'b1;
+        count_rst = 1'b1;
+      end
+
       default: ;
     endcase
     
@@ -518,6 +568,59 @@ always @(*) begin  // Output Logic
                 count_en = 1'b1;
             end
           endcase
+
+        FMADD_type: begin //floating point add instruction
+          Select1 = {2'b0, rs1[4:0]};
+          Select2 = {2'b0, rs2[4:0]};
+          Select3 = {2'b0, rs3[4:0]};
+          fop = 18;
+          fBusSel = 1'b1;
+          fpSel = 1'b1;
+          G_in = 1'b1;
+          if (fstage[4:0] == 5) multicycle = 1'b0;
+          else multicycle = 1'b1;
+          count_en = 1'b1;
+        end
+
+        FMSUB_type: begin //floating point add instruction
+          Select1 = {2'b0, rs1[4:0]};
+          Select2 = {2'b0, rs2[4:0]};
+          Select3 = {2'b0, rs3[4:0]};
+          fop = 19;
+          fBusSel = 1'b1;
+          fpSel = 1'b1;
+          G_in = 1'b1;
+          if (fstage[4:0] == 5) multicycle = 1'b0;
+          else multicycle = 1'b1;
+          count_en = 1'b1;
+        end
+
+        FNMADD_type: begin //floating point add instruction
+          Select1 = {2'b0, rs1[4:0]};
+          Select2 = {2'b0, rs2[4:0]};
+          Select3 = {2'b0, rs3[4:0]};
+          fop = 20;
+          fBusSel = 1'b1;
+          fpSel = 1'b1;
+          G_in = 1'b1;
+          if (fstage[4:0] == 5) multicycle = 1'b0;
+          else multicycle = 1'b1;
+          count_en = 1'b1;
+        end
+
+        FNMSUB_type: begin //floating point add instruction
+          Select1 = {2'b0, rs1[4:0]};
+          Select2 = {2'b0, rs2[4:0]};
+          Select3 = {2'b0, rs3[4:0]};
+          fop = 21;
+          fBusSel = 1'b1;
+          fpSel = 1'b1;
+          G_in = 1'b1;
+          if (fstage[4:0] == 5) multicycle = 1'b0;
+          else multicycle = 1'b1;
+          count_en = 1'b1;
+        end
+
       endcase
 
 
@@ -803,6 +906,26 @@ always @(*) begin  // Output Logic
       //din_in = 1'b1;
     end
 
+    FMADD_type: begin
+      frd_in = 1'b1;
+      Done = 1'b1;
+    end
+
+    FMSUB_type: begin
+      frd_in = 1'b1;
+      Done = 1'b1;
+    end
+
+    FNMADD_type: begin
+      frd_in = 1'b1;
+      Done = 1'b1;
+    end
+
+    FNMSUB_type: begin
+      frd_in = 1'b1;
+      Done = 1'b1;
+    end
+
     FSW_type: begin //store 
       width = 2'b00;
       //load = 1'b1;
@@ -1047,6 +1170,7 @@ fpu ex1(
   .operation(fop),
   .rs1(BusWires1),
   .rs2(BusWires2),
+  .rs3(BusWires3),
   .fcsr(fcsr),
   .result(fSum)
 
@@ -1063,7 +1187,7 @@ regn reg_G (
 // define the internal processor bus
 always @(*)
   if (fBusSel == 1'b1) begin
-        case (Select1)
+    case (Select1)
       _R0: BusWires1 = f0;
       _R1: BusWires1 = f1;
       _R2: BusWires1 = f2;
@@ -1236,6 +1360,45 @@ always @(*)
       endcase
     end
   end
+
+  always@(*)
+    case (Select3)
+      _R0: BusWires3 = f0;
+      _R1: BusWires3 = f1;
+      _R2: BusWires3 = f2;
+      _R3: BusWires3 = f3;
+      _R4: BusWires3 = f4;
+      _R5: BusWires3 = f5;
+      _R6: BusWires3 = f6;
+      _R7: BusWires3 = f7;
+      _R8: BusWires3 = f8;
+      _R9: BusWires3 = f9;
+      _R10: BusWires3 = f10;
+      _R11: BusWires3 = f11;
+      _R12: BusWires3 = f12;
+      _R13: BusWires3 = f13;
+      _R14: BusWires3 = f14;
+      _R15: BusWires3 = f15;
+      _R16: BusWires3 = f16;
+      _R17: BusWires3 = f17;
+      _R18: BusWires3 = f18;
+      _R19: BusWires3 = f19;
+      _R20: BusWires3 = f20;
+      _R21: BusWires3 = f21;
+      _R22: BusWires3 = f22;
+      _R23: BusWires3 = f23;
+      _R24: BusWires3 = f24;
+      _R25: BusWires3 = f25;
+      _R26: BusWires3 = f26;
+      _R27: BusWires3 = f27;
+      _R28: BusWires3 = f28;
+      _R29: BusWires3 = f29;
+      _R30: BusWires3 = f30;
+      _R31: BusWires3 = f31;
+      _PC: BusWires3 = pc-4; //pc has been incremented we want to select the old one (will have to change in pipelined)
+      //_G: BusWires3
+      default: BusWires3 = 32'bx;
+    endcase
 
 regn #(
     .n(3)

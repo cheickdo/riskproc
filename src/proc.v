@@ -308,6 +308,36 @@ always @(*) begin  // Output Logic
 
       F_type: begin 
         case (funct7)
+          7'b0001000: begin //fmul
+              Select1 = {2'b0, rs1[4:0]};
+              Select2 = {2'b0, rs2[4:0]};
+              fop = 2;
+              fBusSel = 1'b1;
+              fpSel = 1'b1;
+              G_in = 1'b1;
+              multicycle = 1'b1;
+              count_rst = 1'b1;
+          end
+          7'b0001100: begin //fdiv
+              Select1 = {2'b0, rs1[4:0]};
+              Select2 = {2'b0, rs2[4:0]};
+              fop = 3;
+              fBusSel = 1'b1;
+              fpSel = 1'b1;
+              G_in = 1'b1;
+              multicycle = 1'b1;
+              count_rst = 1'b1;
+          end
+          7'b0101100: begin //fsqrt
+              Select1 = {2'b0, rs1[4:0]};
+              Select2 = {2'b0, rs2[4:0]};
+              fop = 17;
+              fBusSel = 1'b1;
+              fpSel = 1'b1;
+              G_in = 1'b1;
+              multicycle = 1'b1;
+              count_rst = 1'b1;
+          end
           7'b0000000: begin //floating point add instruction
               Select1 = {2'b0, rs1[4:0]};
               Select2 = {2'b0, rs2[4:0]};
@@ -454,6 +484,39 @@ always @(*) begin  // Output Logic
                 else multicycle = 1'b1;
                 count_en = 1'b1;
               end
+            7'b0001000: begin //fmul
+                Select1 = {2'b0, rs1[4:0]};
+                Select2 = {2'b0, rs2[4:0]};
+                fop = 2;
+                fBusSel = 1'b1;
+                fpSel = 1'b1;
+                G_in = 1'b1;
+                if (fstage[4:0] == 2) multicycle = 1'b0;
+                else multicycle = 1'b1;
+                count_en = 1'b1;
+            end
+            7'b0001100: begin //fdiv
+                Select1 = {2'b0, rs1[4:0]};
+                Select2 = {2'b0, rs2[4:0]};
+                fop = 3;
+                fBusSel = 1'b1;
+                fpSel = 1'b1;
+                G_in = 1'b1;
+                if (fstage[4:0] == 26) multicycle = 1'b0;
+                else multicycle = 1'b1;
+                count_en = 1'b1;
+            end
+            7'b0101100: begin //fsqrt
+                Select1 = {2'b0, rs1[4:0]};
+                Select2 = {2'b0, rs2[4:0]};
+                fop = 17;
+                fBusSel = 1'b1;
+                fpSel = 1'b1;
+                G_in = 1'b1;
+                if (fstage[4:0] == 26) multicycle = 1'b0;
+                else multicycle = 1'b1;
+                count_en = 1'b1;
+            end
           endcase
       endcase
 
@@ -695,6 +758,15 @@ always @(*) begin  // Output Logic
       Done = 1'b1;
         
       case(funct7)
+        7'b0101100: begin
+          frd_in = 1'b1;
+        end
+        7'b0001100: begin
+          frd_in = 1'b1;
+        end
+        7'b0001000: begin
+          frd_in = 1'b1;
+        end
         7'b0000100: begin
           frd_in = 1'b1;
         end

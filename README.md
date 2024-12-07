@@ -73,11 +73,11 @@ The implementation currently only supports machine mode execution
 |fle        |1010011    |000    |1010000|
 |fadd.s     |1010011    |N/A    |0000000|
 |fsub.s     |1010011    |N/A    |0000100|
-### TODO
+|fmul.s     |1010011    |000    |0001000|
+|fdiv.s     |1010011    |000    |0001100|
+|fsqrt.s    |1010011    |000    |010110000000|
 
-|fmul.s|||
-|fdiv.s|||
-|fsqrt.s|||
+### TODO
 
 |fmadd.s|||
 |fmsub.s|||

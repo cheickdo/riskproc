@@ -32,7 +32,8 @@ async def fptest(dut):
     dut.resetn.value = 1
     #f1 = (random() - 0.5)*(6.8*(10**12))
     #f2 = (random() - 0.5)*(6.8*(10**12))
-    f1 = 16.0
+    f1 = 2
+    f2 = 2
     #f2 = 1.0
     #fsum = f1/f2
     fsum = math.sqrt(f1)
@@ -48,7 +49,7 @@ async def fptest(dut):
     print(binary(fsum))
 
     dut.rs1.value = int(binary(f1),2)
-    #dut.rs2.value = int(binary(f2),2)
+    dut.rs2.value = int(binary(f2),2)
 
 #28 for div/sqrt
     for i in range(28):

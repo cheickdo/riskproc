@@ -31,6 +31,8 @@ always@(*)
     case(operation)
         0: result = fpadd_out;
         1: result = fsub_out;
+        2: result = fmul_out;
+        3: result = fdiv_out;
         4: result = fcvt_s_w_out;
         5: result = fcvt_s_wu_out;
         6: result = fcvt_w_s_out;
@@ -44,6 +46,7 @@ always@(*)
         14: result = flt_out;
         15: result = fle_out;
         16: result = feq_out;
+        17: result = fpsqrt_out;
         default:;
     endcase
 

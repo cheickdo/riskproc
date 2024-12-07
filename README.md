@@ -76,8 +76,7 @@ The implementation currently only supports machine mode execution
 |fmul.s     |1010011    |000    |0001000|
 |fdiv.s     |1010011    |000    |0001100|
 |fsqrt.s    |1010011    |000    |010110000000|
-
-|fmadd.s|1000011|000| ||
+|fmadd.s|1000011|000|||
 |fmsub.s|1000111|000||
 |fnmsub.s|1001011|000||
 |fnmadd.s|1001111|000||
@@ -109,12 +108,9 @@ The implementation currently only supports machine mode execution
 |0|5|store address misaligned|
 
 ### TODO
-
-
-
+- Consider NaN in multiply, add and divides
 - Context switching by saving registers
 - Rounding mode encoding in floats
 - Exception generation by floating instructions
 - Complete implementation of system level instructions 
-- Consider NaN in multiply, add and divides
 - Speculative, Out of Order dynamic pipeline

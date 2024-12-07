@@ -1,7 +1,7 @@
 # riskproc
-Implementation of a byte addressable RV32I, RV32M compliant RISC-V processor in Verilog
+Implementation of a byte addressable RV32I, RV32M, RV32F compliant RISC-V processor in Verilog
 
-The implementation currently only supports machine mode execution
+The implementation currently only supports machine mode execution, and does not handle signaling NaN's in floating point interface or provide an interface to implement software handling of floating point exceptions. Memory mapping of csr's can be found in the doc section.
 
 ## Table1. Instruction set
 
@@ -44,8 +44,8 @@ The implementation currently only supports machine mode execution
 |jal        |1101111    |0x0    |      |
 |jalr       |1100111    |0x0    |      |
 |lui        |0110111    |       |      |
-|auipc      |0010111    |       |      |
-|mtvec      |1110011    |       |      |
+|auipc      |0010111    |       |       |
+|mret      |1110011    |       |      |
 |mul        |0110011    |0x0    |0x01  |
 |mulh       |0110011    |0x1    |0x01  |
 |mulsu      |0110011    |0x2    |0x01  |
@@ -81,21 +81,11 @@ The implementation currently only supports machine mode execution
 |fnmsub.s|1001011|000||
 |fnmadd.s|1001111|000||
 
-## Table2. System level instructions (implementation not completed)
+## Table2. System level instructions
 
 
 | Instruction |  Opcode |  funct3 |  Description                                         |
 |-------------|---------|---------|------------------------------------------------------|
-| cssrrw      |  1110011 |  0x0    |  atomic read/write csr                               |
-| cssrrs      |  1110011 |  0x1    |  atomic read & set bits in csr                       |
-| cssrrc      |  1110011 |  0x2    |  atomic read & clear bits in csr                     |
-| cssrwi      |  1110011 |  0x3    |  atomic read/write csr via immediate value           |
-| cssrsi      |  1110011 |  0x4    |  atomic read & set bits in csr via immediate value   |
-| cssrci      |  1110011 |  0x5    |  atomic read & clear bits in csr via immediate value |
-| rdcycle     |  1110011 |  0x1    |  atomic read & set bits in cycle                     |
-| rdcycleh    |  1110011 |  0x1    |  atomic read & set bits in cycleh                    |
-| rdinstret   |  1110011 |  0x1    |  atomic read & set bits in instret                   |
-| rdinstreth  |  1110011 |  0x1    |  atomic read & set bits in instreth                  |
 | mret        |  1110011 |  0x6    |  Return from machine level trap                      |
 
 ## Table3. Exception table
@@ -108,9 +98,4 @@ The implementation currently only supports machine mode execution
 |0|5|store address misaligned|
 
 ### TODO
-- Consider NaN in multiply, add and divides
-- Context switching by saving registers
-- Rounding mode encoding in floats
-- Exception generation by floating instructions
-- Complete implementation of system level instructions 
 - Speculative, Out of Order dynamic pipeline

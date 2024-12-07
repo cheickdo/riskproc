@@ -6,6 +6,7 @@ module fpu(
 	input [31:0] rs2,
     input [31:0] rs3,
     input [31:0] fcsr,
+    output reg [4:0] fflags,
 	output reg [31:0] result
 );
 
@@ -27,6 +28,11 @@ assign DZ = fcsr[3];
 assign NV = fcsr[4];
 
 assign rounding = fcsr[7:5];
+
+always@(posedge clk) begin
+    if (!resetn) fflags <= 0;
+    else if (operation == 3) fflags[3] <= 1;
+end
 
 always@(*)
     case(operation)

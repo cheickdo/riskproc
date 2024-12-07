@@ -15,6 +15,7 @@ module csr(
     output [31:0] mtvec,
     output reg time_compare,
     output reg [31:0] fcsr,
+    input [4:0] fflags,
     output reg [31:0] csr_readbus
 );
     parameter XLEN = 32;

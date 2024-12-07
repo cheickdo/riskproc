@@ -31,6 +31,7 @@ reg [XLEN-1:0] Sum;
 wire [64:0] sproduct;
 wire [64:0] product;
 wire [64:0] suproduct;
+wire [4:0] fflags;
 
 reg ALU_Cout;  // ALU carry-out
 wire [2:0] funct3;
@@ -1426,6 +1427,7 @@ csr csr_inst(
   .mtvec(mtvec),
   .time_compare(time_compare),
   .fcsr(fcsr),
+  .fflags(fflags),
   .csr_readbus()
 );
 

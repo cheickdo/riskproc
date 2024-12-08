@@ -27,7 +27,7 @@ module fpadd(
 
 	reg [24:0] sum_m_pipe, sum_m, sum_m2;
 	reg [3:0] renorm_shift, renorm_shift_pipe;
-    integer signed renorm_exp, renorm_exp_pipe;
+   reg signed [6:0] renorm_exp, renorm_exp_pipe;
 
     assign e1 = rs1[30:23];
     assign e2 = rs2[30:23];

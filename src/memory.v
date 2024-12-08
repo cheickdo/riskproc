@@ -6,7 +6,7 @@ module memory
     input [31:0]dout,
     output reg[31:0] din
 );
-    reg [31:0] my_mem[0:65535];
+    reg [31:0] my_mem[0:65535]; //16 bits worth right now
 
     always@(*) 
         //din = my_mem[realaddr];

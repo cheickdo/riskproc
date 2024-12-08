@@ -27,7 +27,7 @@ module interrupt_ctrl(
 );
     parameter XLEN = 32;
     parameter S_type = 7'b0100011,I_type_1=7'b0000011;
-    parameter access = 3'b100;
+    parameter access = 3'b100, write_back = 3'b101;
 
     //WIRES
     wire machine_global_ie;
@@ -42,9 +42,12 @@ module interrupt_ctrl(
     //assign machine_time_ip = mip[7];
     assign machine_time_ie = mie[7];
 
+	 
+	 //TODO consolodate this into 1 block 
+	 /*
     always@(posedge clk)
-        if (!resetn) trapped <= 0;
-        else if ((Tstep_Q == access) & (mepc != 32'h0) & (trapped == 0)) begin
+        //if (!resetn) trapped <= 0;
+        if ((Tstep_Q == access) & (mepc != 32'h0) & (trapped == 0)) begin
             trap <= 1;
             trapped <= 1;
             //mepc_enn <= 1;
@@ -58,13 +61,26 @@ module interrupt_ctrl(
         end
         else begin
             trap <= 0;            
-        end
+        end*/
 
     always@(posedge clk)
 
         if (!resetn) begin
             mip <= 0;
             mepc_enn <= 0;
+			trapped <= 0;
+        end
+        else if ((Tstep_Q == access) & (mepc != 32'h0) & (trapped == 0)) begin //trap
+            trap <= 1;
+            trapped <= 1;
+            //mepc_enn <= 1;
+        end
+        else if (ret == 1) begin
+            trap <= 0;
+            mepc <= 0;
+            mip[7] <= 0; //need some reg to keep track of which goes to 0
+            mepc_enn <= 0;
+            trapped <= 0;
         end
         //instruction address misaligned
         else if ((pc[1:0] != 2'b00) & !mepc_enn) begin
@@ -72,6 +88,7 @@ module interrupt_ctrl(
             mepc <= pc;
             mcause <= 0;
             mepc_enn <= 1;
+            trap <= 0; 
         end
         // load addresss misaligned
         else if ((load == 1) & (addr[1:0] != 2'b00) & (W == 0) & !mepc_enn) begin
@@ -79,13 +96,15 @@ module interrupt_ctrl(
             mbadaddr <= pc;
             mcause <= 4;
             mepc_enn <= 1;
+            trap <= 0; 
         end
         //store address misaligned
-        else if  (/*(W == 1) &*/ (Sum[1:0] != 2'b00) & (opcode == S_type)& !mepc_enn) begin
+        else if  (/*(W == 1) &*/ (Sum[1:0] != 2'b00) & (opcode == S_type)& !mepc_enn & (Tstep_Q == write_back)) begin
             mepc <= pc;
             mbadaddr <= pc;
             mcause <= 5;
             mepc_enn <= 1;
+            trap <= 0; 
         end
         //else check interrupts
         else if ((time_compare == 1) & (machine_global_ie & machine_time_ie & (!mip[7]))& !mepc_enn) begin
@@ -93,10 +112,13 @@ module interrupt_ctrl(
             mepc <= pc;
             mip[7] <= 1;
             mepc_enn <= 1;
+            trap <= 0; 
         end
         else begin
+            trap <= 0;  
             mbadaddr <= 0;
             //mepc <= 0;
+
         end
 
 

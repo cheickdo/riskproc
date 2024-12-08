@@ -12,8 +12,6 @@ module fsqrt(
 
 wire [31:0] inv_sqrt;
 
-reg [31:0] cnt;
-
 wire s1;
 wire [7:0] e1;
 wire [22:0] m1;
@@ -134,12 +132,6 @@ fmul sq10(
     .rs2(rs1),
     .out(out)
 );
-
-always@(posedge clk)
-    if (!resetn)
-        cnt = 0;
-    else
-        cnt += 1;
 
 // Dump waves
 initial begin

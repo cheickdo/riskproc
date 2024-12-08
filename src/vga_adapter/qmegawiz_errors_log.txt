@@ -1,0 +1,10 @@
+
+
+C:/Users/mario/Desktop/Fall2022/ECE241/lab8/vga_adapter/vga_pll.v
+
+Nov 24 08PM:52:55>: Error in CNX file format.
+
+Error messages are listed in file
+C:/Users/mario/Desktop/Fall2022/ECE241/lab8/vga_adapter/vga_pll.cnxerr.
+
+Can't create the custom megafunction variation file(s)

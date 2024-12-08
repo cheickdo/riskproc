@@ -10,8 +10,8 @@ wire s_out;
 reg [31:0] sig;
 
 reg [22:0] mantissa;
-reg [31:0] i;
-reg [31:0] pre_sig;
+wire [31:0] i;
+wire [31:0] pre_sig;
 
 
 assign s_out = rs1[31];

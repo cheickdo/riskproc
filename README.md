@@ -98,4 +98,7 @@ The implementation currently only supports machine mode execution, and does not 
 |0|5|store address misaligned|
 
 ### TODO
+- Add atomic instructions
+- Refactor codebase
 - Speculative, Out of Order dynamic pipeline
+- Improve documentation

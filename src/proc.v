@@ -21,10 +21,10 @@ reg signed [XLEN-1:0] BusWires1;
 reg [XLEN-1:0] BusWires2,BusWires3, PCSrc;
 reg [5:0] Select1, Select2, Select3;  // BusWires selector
 reg fpSel, fBusSel;
-reg [31:0] fstage;
+wire [31:0] fstage;
 
 reg [XLEN-1:0] Sum_full;
-reg [XLEN-1:0] fSum;
+wire [XLEN-1:0] fSum;
 wire [7:0] Sum_byte = Sum_full[7:0];
 wire [15:0] Sum_half = Sum_full[15:0];
 reg [XLEN-1:0] Sum;

@@ -114,6 +114,7 @@ module fpadd(
             renorm_exp = -4;		
         end     
             else begin
+            renorm_shift = 0;
             renorm_exp = 0;
         end	
 

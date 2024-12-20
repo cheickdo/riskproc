@@ -38,7 +38,7 @@ module regarray(
 );
 
   regn reg_0 (
-      .D(0),
+      .D(32'b0),
       .resetn(resetn),
       .En(1'b1),
       .clk(clk),

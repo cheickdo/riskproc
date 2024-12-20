@@ -12,9 +12,9 @@ parameter XLEN = 32;
 parameter FLEN = 32;
 
 wire [XLEN-1:0] R_in;  // r0, ..., r7 register enables
-reg rs1_in, rs2_in, rd_in, frd_in, IR_in, ADDR_in, Done, dout_in, 
+reg rs2_in, rd_in, frd_in, IR_in, ADDR_in, Done, dout_in, 
   load, din_in, G_in,F_in, AddSub, Arith, zero_extend, branch,
-    mul_arith, ret, sys_clear, multicycle, count_rst, count_en;
+    mul_arith, ret, sys_clear, multicycle, count_rst, count_en, u_op, u2_op;
 reg [1:0] width;
 reg [2:0] Tstep_Q, Tstep_D;
 reg signed [XLEN-1:0] BusWires1;
@@ -60,9 +60,18 @@ reg sp_incr, sp_decr;
 reg pc_in; 
 reg  W_D;  // used for write signal
 reg Imm;
-wire C, N, Z;
+wire C, N, Ze;
 wire trap, time_compare;
 wire [XLEN-1:0] ADDR;
+wire zero;
+wire [2:0] condstat;
+wire [2:0] arithstat;
+
+assign C = condstat[2];
+assign N = condstat[1];
+assign Ze = condstat[0];
+
+assign arithstat = {ALU_Cout, Sum[31], zero};
 
 //csr wires
 wire [XLEN-1:0] mstatus;
@@ -77,6 +86,7 @@ wire [FLEN-1:0] fcsr;
 wire [6:0] Imm_funct = I_Imm[11:5];
 wire [4:0] reduced_Imm = I_Imm[4:0];
 
+assign zero = Sum == 32'b0;
 assign opcode = IR[6:0];
 assign rd = IR[11:7];
 assign funct3 = IR[14:12];
@@ -86,7 +96,7 @@ assign rs3 = IR[31:27];
 assign funct7 = IR[31:25];
 assign I_Imm = IR[31:20];
 assign S_Imm = {IR[31:25], IR[11:7]};
-assign B_Imm = {IR[31],IR[31], IR[31], IR[7], IR[30:25], IR[11:9]}; //word addressable but instructions assume byte addressability so logic is done here
+assign B_Imm = {IR[31], IR[7], IR[30:25], IR[11:8], 1'b0}; //NOT CORRECT
 assign UJ_Imm = {IR[31], IR[19:12], IR[20], IR[30:21], 1'b0};
 assign U_Imm = {IR[31:12]};
 
@@ -169,7 +179,6 @@ parameter _R0 = 6'b000000, _R1 = 6'b000001, _R2 = 6'b000010, _R3 = 6'b000011, _R
 always @(*) begin  // Output Logic
 
   // default values for control signals
-  rs1_in     = 1'b0;
   rd_in = 1'b0;
   frd_in = 1'b0;
   //A_in      = 1'b0;
@@ -203,6 +212,8 @@ always @(*) begin  // Output Logic
   multicycle = 1'b0;
   count_rst = 1'b0;
   count_en = 1'b1;
+  u_op = 1'b0;
+  u2_op = 1'b0;
 
   case (Tstep_Q)
 
@@ -219,8 +230,8 @@ always @(*) begin  // Output Logic
     exec:  // execute instruction
     case (opcode)
       R_type: begin
-        Select1 = {2'b0, rs1[4:0]};
-        Select2 = {2'b0, rs2[4:0]};
+        Select1 = {1'b0, rs1[4:0]};
+        Select2 = {1'b0, rs2[4:0]};
         G_in = 1'b1;
 
         if (funct7[0] == 1)begin //MUL instructions
@@ -241,13 +252,13 @@ always @(*) begin  // Output Logic
 
       I_type_1: begin //load integer
             Imm = 1'b1;
-            Select1 = {2'b0, rs1[4:0]};
+            Select1 = {1'b0, rs1[4:0]};
             G_in = 1'b1;
             //din_in = 1'b1; //new change
       end
       
       I_type_2: begin
-        Select1 = {2'b0, rs1[4:0]};
+        Select1 = {1'b0, rs1[4:0]};
         Imm = 1'b1;
         G_in = 1'b1;
         case (funct3)
@@ -261,7 +272,7 @@ always @(*) begin  // Output Logic
       end
 
       S_type: begin //store 
-        Select1 = {2'b0, rs2[4:0]};
+        Select1 = {1'b0, rs2[4:0]};
         Select2 = _R0;
         dout_in = 1'b1;
       end
@@ -279,6 +290,7 @@ always @(*) begin  // Output Logic
             Select2 = _R0;
             G_in = 1'b1;
           end
+          default: ;
         endcase
       end
 
@@ -286,6 +298,7 @@ always @(*) begin  // Output Logic
         Select1 = _R0;
         Imm = 1'b1;
         G_in = 1'b1;
+        u_op = 1'b1;
       end
 
       U2_type: begin //Load Upper Imm
@@ -295,8 +308,8 @@ always @(*) begin  // Output Logic
       end
 
       B_type: begin //conditional branches, do a subtraction and check the value
-        Select1 = {2'b0, rs1[4:0]};
-        Select2 = {2'b0, rs2[4:0]};
+        Select1 = {1'b0, rs1[4:0]};
+        Select2 = {1'b0, rs2[4:0]};
         F_in = 1'b1;
         //G_in = 1'b1;
         AddSub = 1'b1;
@@ -304,7 +317,7 @@ always @(*) begin  // Output Logic
 
       FLW_type: begin //Load float
             Imm = 1'b1;
-            Select1 = {2'b0, rs1[4:0]};
+            Select1 = {1'b0, rs1[4:0]};
             G_in = 1'b1;
             //din_in = 1'b1; //new change
       end
@@ -312,8 +325,8 @@ always @(*) begin  // Output Logic
       F_type: begin 
         case (funct7)
           7'b0001000: begin //fmul
-              Select1 = {2'b0, rs1[4:0]};
-              Select2 = {2'b0, rs2[4:0]};
+              Select1 = {1'b0, rs1[4:0]};
+              Select2 = {1'b0, rs2[4:0]};
               fop = 2;
               fBusSel = 1'b1;
               fpSel = 1'b1;
@@ -322,8 +335,8 @@ always @(*) begin  // Output Logic
               count_rst = 1'b1;
           end
           7'b0001100: begin //fdiv
-              Select1 = {2'b0, rs1[4:0]};
-              Select2 = {2'b0, rs2[4:0]};
+              Select1 = {1'b0, rs1[4:0]};
+              Select2 = {1'b0, rs2[4:0]};
               fop = 3;
               fBusSel = 1'b1;
               fpSel = 1'b1;
@@ -332,8 +345,8 @@ always @(*) begin  // Output Logic
               count_rst = 1'b1;
           end
           7'b0101100: begin //fsqrt
-              Select1 = {2'b0, rs1[4:0]};
-              Select2 = {2'b0, rs2[4:0]};
+              Select1 = {1'b0, rs1[4:0]};
+              Select2 = {1'b0, rs2[4:0]};
               fop = 17;
               fBusSel = 1'b1;
               fpSel = 1'b1;
@@ -342,8 +355,8 @@ always @(*) begin  // Output Logic
               count_rst = 1'b1;
           end
           7'b0000000: begin //floating point add instruction
-              Select1 = {2'b0, rs1[4:0]};
-              Select2 = {2'b0, rs2[4:0]};
+              Select1 = {1'b0, rs1[4:0]};
+              Select2 = {1'b0, rs2[4:0]};
               fop = 0;
               fBusSel = 1'b1;
               fpSel = 1'b1;
@@ -352,8 +365,8 @@ always @(*) begin  // Output Logic
               count_rst = 1'b1;
           end
           7'b0000100: begin //floating point sub instruction
-              Select1 = {2'b0, rs1[4:0]};
-              Select2 = {2'b0, rs2[4:0]};
+              Select1 = {1'b0, rs1[4:0]};
+              Select2 = {1'b0, rs2[4:0]};
               fop = 1;
               fBusSel = 1'b1;
               fpSel = 1'b1;
@@ -362,8 +375,8 @@ always @(*) begin  // Output Logic
               count_rst = 1'b1;
           end
           7'b1010000: begin
-              Select1 = {2'b0, rs1[4:0]};
-              Select2 = {2'b0, rs2[4:0]};
+              Select1 = {1'b0, rs1[4:0]};
+              Select2 = {1'b0, rs2[4:0]};
               //fop = 4;
               fBusSel = 1'b1;
               fpSel = 1'b1;
@@ -373,8 +386,8 @@ always @(*) begin  // Output Logic
               if (funct3 == 2) fop = 16; //feq
           end
           7'b0010000: begin
-              Select1 = {2'b0, rs1[4:0]};
-              Select2 = {2'b0, rs2[4:0]};
+              Select1 = {1'b0, rs1[4:0]};
+              Select2 = {1'b0, rs2[4:0]};
               //fop = 4;
               fBusSel = 1'b1;
               fpSel = 1'b1;
@@ -384,8 +397,8 @@ always @(*) begin  // Output Logic
               if (funct3 == 2) fop = 13; //fsgnjx.s
           end
           7'b0010100: begin
-              Select1 = {2'b0, rs1[4:0]};
-              Select2 = {2'b0, rs2[4:0]};
+              Select1 = {1'b0, rs1[4:0]};
+              Select2 = {1'b0, rs2[4:0]};
               //fop = 4;
               fBusSel = 1'b1;
               fpSel = 1'b1;
@@ -395,14 +408,14 @@ always @(*) begin  // Output Logic
           end
           7'b1101000: begin //convert integer to float
             if (rs2 == 5'b00000) begin
-              Select1 = {2'b0, rs1[4:0]};
+              Select1 = {1'b0, rs1[4:0]};
               Select2 = _R0;
               fop = 4;
               fpSel = 1'b1;
               G_in = 1'b1;
             end
             else if (rs2 == 5'b00001) begin
-              Select1 = {2'b0, rs1[4:0]};
+              Select1 = {1'b0, rs1[4:0]};
               Select2 = _R0;
               fop = 5;
               fpSel = 1'b1;
@@ -411,7 +424,7 @@ always @(*) begin  // Output Logic
           end
           7'b1111000: begin //move integer to float
             if (rs2 == 5'b00000) begin
-              Select1 = {2'b0, rs1[4:0]};
+              Select1 = {1'b0, rs1[4:0]};
               Select2 = _R0;
               G_in = 1'b1;
             end
@@ -425,14 +438,14 @@ always @(*) begin  // Output Logic
             end
             if (rs2 == 5'b00000) begin //move float to integer
               fBusSel = 1'b1;
-              Select1 = {2'b0, rs1[4:0]};
+              Select1 = {1'b0, rs1[4:0]};
               Select2 = _R0;
               G_in = 1'b1;
             end
           end
           7'b1100000: begin //fcvt.w.s TODO
             if (rs2 == 5'b00000) begin
-              Select1 = {2'b0, rs1[4:0]};
+              Select1 = {1'b0, rs1[4:0]};
               Select2 = _R0;
               fop = 6;
               fpSel = 1'b1;
@@ -440,7 +453,7 @@ always @(*) begin  // Output Logic
               G_in = 1'b1;
             end
             if (rs2 == 5'b00001) begin
-              Select1 = {2'b0, rs1[4:0]};
+              Select1 = {1'b0, rs1[4:0]};
               Select2 = _R0;
               fop = 7;
               fpSel = 1'b1;
@@ -448,20 +461,21 @@ always @(*) begin  // Output Logic
               G_in = 1'b1;
             end
           end
+          default: ;
         endcase
       end
 
       FSW_type: begin //store floating
-        Select1 = {2'b0, rs2[4:0]};
+        Select1 = {1'b0, rs2[4:0]};
         Select2 = _R0;
         fBusSel = 1'b1;
         dout_in = 1'b1;
       end
 
       FMADD_type: begin
-        Select1 = {2'b0, rs1[4:0]};
-        Select2 = {2'b0, rs2[4:0]};
-        Select3 = {2'b0, rs3[4:0]};
+        Select1 = {1'b0, rs1[4:0]};
+        Select2 = {1'b0, rs2[4:0]};
+        Select3 = {1'b0, rs3[4:0]};
         fop = 18;
         fBusSel = 1'b1;
         fpSel = 1'b1;
@@ -471,9 +485,9 @@ always @(*) begin  // Output Logic
       end
 
       FMSUB_type: begin
-        Select1 = {2'b0, rs1[4:0]};
-        Select2 = {2'b0, rs2[4:0]};
-        Select3 = {2'b0, rs3[4:0]};
+        Select1 = {1'b0, rs1[4:0]};
+        Select2 = {1'b0, rs2[4:0]};
+        Select3 = {1'b0, rs3[4:0]};
         fop = 19;
         fBusSel = 1'b1;
         fpSel = 1'b1;
@@ -483,9 +497,9 @@ always @(*) begin  // Output Logic
       end
 
       FNMADD_type: begin
-        Select1 = {2'b0, rs1[4:0]};
-        Select2 = {2'b0, rs2[4:0]};
-        Select3 = {2'b0, rs3[4:0]};
+        Select1 = {1'b0, rs1[4:0]};
+        Select2 = {1'b0, rs2[4:0]};
+        Select3 = {1'b0, rs3[4:0]};
         fop = 20;
         fBusSel = 1'b1;
         fpSel = 1'b1;
@@ -495,9 +509,9 @@ always @(*) begin  // Output Logic
       end
 
       FNMSUB_type: begin
-        Select1 = {2'b0, rs1[4:0]};
-        Select2 = {2'b0, rs2[4:0]};
-        Select3 = {2'b0, rs3[4:0]};
+        Select1 = {1'b0, rs1[4:0]};
+        Select2 = {1'b0, rs2[4:0]};
+        Select3 = {1'b0, rs3[4:0]};
         fop = 21;
         fBusSel = 1'b1;
         fpSel = 1'b1;
@@ -514,8 +528,8 @@ always @(*) begin  // Output Logic
         F_type:  
           case (funct7)
             7'b0000000: begin //floating point add instruction
-                Select1 = {2'b0, rs1[4:0]};
-                Select2 = {2'b0, rs2[4:0]};
+                Select1 = {1'b0, rs1[4:0]};
+                Select2 = {1'b0, rs2[4:0]};
                 fop = 0;
                 fBusSel = 1'b1;
                 fpSel = 1'b1;
@@ -525,8 +539,8 @@ always @(*) begin  // Output Logic
                 count_en = 1'b1;
               end
             7'b0000100: begin //floating point add instruction
-                Select1 = {2'b0, rs1[4:0]};
-                Select2 = {2'b0, rs2[4:0]};
+                Select1 = {1'b0, rs1[4:0]};
+                Select2 = {1'b0, rs2[4:0]};
                 fop = 1;
                 fBusSel = 1'b1;
                 fpSel = 1'b1;
@@ -536,8 +550,8 @@ always @(*) begin  // Output Logic
                 count_en = 1'b1;
               end
             7'b0001000: begin //fmul
-                Select1 = {2'b0, rs1[4:0]};
-                Select2 = {2'b0, rs2[4:0]};
+                Select1 = {1'b0, rs1[4:0]};
+                Select2 = {1'b0, rs2[4:0]};
                 fop = 2;
                 fBusSel = 1'b1;
                 fpSel = 1'b1;
@@ -547,8 +561,8 @@ always @(*) begin  // Output Logic
                 count_en = 1'b1;
             end
             7'b0001100: begin //fdiv
-                Select1 = {2'b0, rs1[4:0]};
-                Select2 = {2'b0, rs2[4:0]};
+                Select1 = {1'b0, rs1[4:0]};
+                Select2 = {1'b0, rs2[4:0]};
                 fop = 3;
                 fBusSel = 1'b1;
                 fpSel = 1'b1;
@@ -558,8 +572,8 @@ always @(*) begin  // Output Logic
                 count_en = 1'b1;
             end
             7'b0101100: begin //fsqrt
-                Select1 = {2'b0, rs1[4:0]};
-                Select2 = {2'b0, rs2[4:0]};
+                Select1 = {1'b0, rs1[4:0]};
+                Select2 = {1'b0, rs2[4:0]};
                 fop = 17;
                 fBusSel = 1'b1;
                 fpSel = 1'b1;
@@ -568,12 +582,13 @@ always @(*) begin  // Output Logic
                 else multicycle = 1'b1;
                 count_en = 1'b1;
             end
+            default: ;
           endcase
 
         FMADD_type: begin //floating point add instruction
-          Select1 = {2'b0, rs1[4:0]};
-          Select2 = {2'b0, rs2[4:0]};
-          Select3 = {2'b0, rs3[4:0]};
+          Select1 = {1'b0, rs1[4:0]};
+          Select2 = {1'b0, rs2[4:0]};
+          Select3 = {1'b0, rs3[4:0]};
           fop = 18;
           fBusSel = 1'b1;
           fpSel = 1'b1;
@@ -584,9 +599,9 @@ always @(*) begin  // Output Logic
         end
 
         FMSUB_type: begin //floating point add instruction
-          Select1 = {2'b0, rs1[4:0]};
-          Select2 = {2'b0, rs2[4:0]};
-          Select3 = {2'b0, rs3[4:0]};
+          Select1 = {1'b0, rs1[4:0]};
+          Select2 = {1'b0, rs2[4:0]};
+          Select3 = {1'b0, rs3[4:0]};
           fop = 19;
           fBusSel = 1'b1;
           fpSel = 1'b1;
@@ -597,9 +612,9 @@ always @(*) begin  // Output Logic
         end
 
         FNMADD_type: begin //floating point add instruction
-          Select1 = {2'b0, rs1[4:0]};
-          Select2 = {2'b0, rs2[4:0]};
-          Select3 = {2'b0, rs3[4:0]};
+          Select1 = {1'b0, rs1[4:0]};
+          Select2 = {1'b0, rs2[4:0]};
+          Select3 = {1'b0, rs3[4:0]};
           fop = 20;
           fBusSel = 1'b1;
           fpSel = 1'b1;
@@ -610,9 +625,9 @@ always @(*) begin  // Output Logic
         end
 
         FNMSUB_type: begin //floating point add instruction
-          Select1 = {2'b0, rs1[4:0]};
-          Select2 = {2'b0, rs2[4:0]};
-          Select3 = {2'b0, rs3[4:0]};
+          Select1 = {1'b0, rs1[4:0]};
+          Select2 = {1'b0, rs2[4:0]};
+          Select3 = {1'b0, rs3[4:0]};
           fop = 21;
           fBusSel = 1'b1;
           fpSel = 1'b1;
@@ -621,7 +636,7 @@ always @(*) begin  // Output Logic
           else multicycle = 1'b1;
           count_en = 1'b1;
         end
-
+        default: ;
       endcase
 
 
@@ -660,7 +675,7 @@ always @(*) begin  // Output Logic
 
       S_type: begin //store
             Imm = 1'b1;
-            Select1 = {2'b0, rs1[4:0]};
+            Select1 = {1'b0, rs1[4:0]};
             G_in = 1'b1;
             W_D = 1'b1;
       end
@@ -668,6 +683,7 @@ always @(*) begin  // Output Logic
       UJ_type: begin //breaking my standard here, writing back in this cycle
         //branch = 1'b1;
         rd_in = 1'b1;
+        
         Select1 = _PC;
         Imm = 1'b1;
         G_in = 1'b1;
@@ -686,20 +702,21 @@ always @(*) begin  // Output Logic
       end
 
       U2_type: begin //Load Upper Imm
+        u2_op = 1'b1;
         rd_in = 1'b1;
       end
 
       B_type: begin //conditional branches, check value type
         case (funct3)
           beq: begin 
-            if (Z == 1) begin
+            if (Ze == 1) begin
               Select1 = _PC;
               Imm = 1'b1;
               G_in = 1'b1;
             end
           end
           bne: begin 
-            if (Z == 0) begin
+            if (Ze == 0) begin
               Select1 = _PC;
               Imm = 1'b1;
               G_in = 1'b1;
@@ -749,193 +766,191 @@ always @(*) begin  // Output Logic
 
       FSW_type: begin //store
         Imm = 1'b1;
-        Select1 = {2'b0, rs1[4:0]};
+        Select1 = {1'b0, rs1[4:0]};
         G_in = 1'b1;
         W_D = 1'b1;
       end
+      default: ;
     endcase
 
     write_back:  // define write_back
     case (opcode)
-    R_type: begin
-        rd_in = 1'b1;
-        Done = 1'b1;
-    end
-
-    I_type_1: begin //load
-          rd_in = 1'b1;
-          Done = 1'b1;
-          //din_in = 1'b1;
-    end
-
-    I_type_2: begin
+      R_type: begin
           rd_in = 1'b1;
           Done = 1'b1;
       end
 
-    S_type: begin //store 
-      case (funct3)
-        0: width = 2'b10;
-        1: width = 2'b01;
-        2: width = 2'b00;
-        default:;
-      endcase
-          //load = 1'b1;
-          //G_in = 1'b1;
-          load = 1'b1;
-          Done = 1'b1; 
-    end
-      
-    UJ_type: begin //Jump and Link
-      pc_in = 1'b1;
-      branch = 1'b1;
-      Done = 1'b1;
-    end
-
-    SB_type: begin //Jump and Link Reg
-      pc_in = 1'b1;
-      branch = 1'b1;
-      Done = 1'b1;
-    end
-
-      U_type: begin //Load Upper Imm
-        Done = 1'b1;
+      I_type_1: begin //load
+            rd_in = 1'b1;
+            Done = 1'b1;
+            //din_in = 1'b1;
       end
 
-      U2_type: begin //Load Upper Imm
-        Done = 1'b1;
-      end
+      I_type_2: begin
+            rd_in = 1'b1;
+            Done = 1'b1;
+        end
 
-      B_type: begin //conditional branches
+      S_type: begin //store 
         case (funct3)
-          beq: begin 
-            if (Z == 1) begin
-              pc_in = 1'b1;
-              branch = 1'b1;
-              Done = 1'b1;
+          0: width = 2'b10;
+          1: width = 2'b01;
+          2: width = 2'b00;
+          default:;
+        endcase
+            //load = 1'b1;
+            //G_in = 1'b1;
+            load = 1'b1;
+            Done = 1'b1; 
+      end
+        
+      UJ_type: begin //Jump and Link
+        pc_in = 1'b1;
+        branch = 1'b1;
+        Done = 1'b1;
+      end
+
+      SB_type: begin //Jump and Link Reg
+        pc_in = 1'b1;
+        branch = 1'b1;
+        Done = 1'b1;
+      end
+
+        U_type: begin //Load Upper Imm
+          Done = 1'b1;
+        end
+
+        U2_type: begin //Load Upper Imm
+          Done = 1'b1;
+        end
+
+        B_type: begin //conditional branches
+          Done = 1'b1;
+          case (funct3)
+            beq: begin 
+              if (Ze == 1) begin
+                pc_in = 1'b1;
+                branch = 1'b1;
+              end
             end
+            bne: begin 
+              if (Ze == 0) begin
+                pc_in = 1'b1;
+                branch = 1'b1;
+              end
+            end
+            blt: begin 
+              if (N == 1) begin
+                pc_in = 1'b1;
+                branch = 1'b1;
+              end
+            end
+            bge: begin 
+              if (N == 0) begin
+                pc_in = 1'b1;
+                branch = 1'b1;
+              end
+            end
+            bltu: begin 
+              if (N == 1) begin
+                pc_in = 1'b1;
+                branch = 1'b1;
+              end
+            end
+            bgeu: begin 
+              if (N == 0) begin
+                pc_in = 1'b1;
+                branch = 1'b1;
+              end
+            end
+            default: ;
+          endcase
+        end
+      SYSTEM_type: begin
+        pc_in = 1'b1;
+        ret = 1'b1;
+        Done = 1'b1;
+      end
+      F_type: begin //for both move and fcvt this remains correct
+        Done = 1'b1;
+          
+        case(funct7)
+          7'b0101100: begin
+            frd_in = 1'b1;
           end
-          bne: begin 
-            if (Z == 0) begin
-              pc_in = 1'b1;
-              branch = 1'b1;
-              Done = 1'b1;
-            end
+          7'b0001100: begin
+            frd_in = 1'b1;
           end
-          blt: begin 
-            if (N == 1) begin
-              pc_in = 1'b1;
-              branch = 1'b1;
-              Done = 1'b1;
-            end
+          7'b0001000: begin
+            frd_in = 1'b1;
           end
-          bge: begin 
-            if (N == 0) begin
-              pc_in = 1'b1;
-              branch = 1'b1;
-              Done = 1'b1;
-            end
+          7'b0000100: begin
+            frd_in = 1'b1;
           end
-          bltu: begin 
-            if (N == 1) begin
-              pc_in = 1'b1;
-              branch = 1'b1;
-              Done = 1'b1;
-            end
+          7'b0000000: begin
+            frd_in = 1'b1;
           end
-          bgeu: begin 
-            if (N == 0) begin
-              pc_in = 1'b1;
-              branch = 1'b1;
-              Done = 1'b1;
-            end
+          7'b1010000: begin
+            frd_in = 1'b1;
+          end
+          7'b0010000: begin
+            frd_in = 1'b1;
+          end
+          7'b0010100: begin
+            frd_in = 1'b1;
+          end
+          7'b1101000: begin
+            frd_in = 1'b1;
+          end
+          7'b1111000: begin
+            frd_in = 1'b1;
+          end
+          7'b1110000: begin 
+            rd_in = 1'b1;
+          end
+          7'b1100000: begin
+            rd_in = 1'b1;
           end
           default: ;
         endcase
       end
-    SYSTEM_type: begin
-      pc_in = 1'b1;
-      ret = 1'b1;
-      Done = 1'b1;
-    end
-    F_type: begin //for both move and fcvt this remains correct
-      Done = 1'b1;
-        
-      case(funct7)
-        7'b0101100: begin
-          frd_in = 1'b1;
-        end
-        7'b0001100: begin
-          frd_in = 1'b1;
-        end
-        7'b0001000: begin
-          frd_in = 1'b1;
-        end
-        7'b0000100: begin
-          frd_in = 1'b1;
-        end
-        7'b0000000: begin
-          frd_in = 1'b1;
-        end
-        7'b1010000: begin
-          frd_in = 1'b1;
-        end
-        7'b0010000: begin
-          frd_in = 1'b1;
-        end
-        7'b0010100: begin
-          frd_in = 1'b1;
-        end
-        7'b1101000: begin
-          frd_in = 1'b1;
-        end
-        7'b1111000: begin
-          frd_in = 1'b1;
-        end
-        7'b1110000: begin 
-          rd_in = 1'b1;
-        end
-        7'b1100000: begin
-          rd_in = 1'b1;
-        end
-      endcase
-    end
 
-    FLW_type: begin //load floating
-      frd_in = 1'b1;
-      Done = 1'b1;
-      //din_in = 1'b1;
-    end
+      FLW_type: begin //load floating
+        frd_in = 1'b1;
+        Done = 1'b1;
+        //din_in = 1'b1;
+      end
 
-    FMADD_type: begin
-      frd_in = 1'b1;
-      Done = 1'b1;
-    end
+      FMADD_type: begin
+        frd_in = 1'b1;
+        Done = 1'b1;
+      end
 
-    FMSUB_type: begin
-      frd_in = 1'b1;
-      Done = 1'b1;
-    end
+      FMSUB_type: begin
+        frd_in = 1'b1;
+        Done = 1'b1;
+      end
 
-    FNMADD_type: begin
-      frd_in = 1'b1;
-      Done = 1'b1;
-    end
+      FNMADD_type: begin
+        frd_in = 1'b1;
+        Done = 1'b1;
+      end
 
-    FNMSUB_type: begin
-      frd_in = 1'b1;
-      Done = 1'b1;
-    end
+      FNMSUB_type: begin
+        frd_in = 1'b1;
+        Done = 1'b1;
+      end
 
-    FSW_type: begin //store 
-      width = 2'b00;
-      //load = 1'b1;
-      //G_in = 1'b1;
-      load = 1'b1;
-      Done = 1'b1; 
-    end
-    default: ;
-  endcase
+      FSW_type: begin //store 
+        width = 2'b00;
+        //load = 1'b1;
+        //G_in = 1'b1;
+        load = 1'b1;
+        Done = 1'b1; 
+      end
+      default: ;
+    endcase
+  default: ;
   endcase
 end
 
@@ -976,7 +991,7 @@ regarray regs (/*AUTOINST*/
     // Inputs
     .G			(G[31:0]),
     .resetn		(resetn),
-    .R_in			(R_in[31:0]), //must be in order?? 
+    .R_in			(R_in[31:0]), 
     .clk			(clk));
 
 regarray fregs (/*AUTOINST*/
@@ -1016,7 +1031,7 @@ regarray fregs (/*AUTOINST*/
 		 // Inputs
 		 .G			(G[31:0]),
 		 .resetn		(resetn),
-		 .R_in			(Fp_in[31:0]), //must be in order?? 
+		 .R_in			(Fp_in[31:0]), 
 		 .clk			(clk));
 
 //multicycle counter
@@ -1074,8 +1089,6 @@ regn #(.n(1)) reg_W (
 );
 
 parameter lsl = 2'b00, lsr = 2'b01, asr = 2'b10, ror = 2'b11;
-wire [1:0] shift_type;
-assign shift_type = IR[6:5];
 
 //pc logic unit
 always @(*)
@@ -1093,16 +1106,16 @@ always@(*)
   end
   else begin
     case(width)
-    2'b00: Sum = Sum_full;
-    2'b01: begin
-      if (!zero_extend) Sum = {{16{Sum_half[15]}},Sum_half};
-      else Sum = {16'b0,Sum_half};
-    end
-    2'b10: begin
-      if (!zero_extend) Sum = {{24{Sum_byte[7]}},Sum_byte};
-      else Sum = {24'b0,Sum_byte};
-    end
-    default: Sum = 2'bxx;
+      2'b00: Sum = Sum_full;
+      2'b01: begin
+        if (!zero_extend) Sum = {{16{Sum_half[15]}},Sum_half};
+        else Sum = {16'b0,Sum_half};
+      end
+      2'b10: begin
+        if (!zero_extend) Sum = {{24{Sum_byte[7]}},Sum_byte};
+        else Sum = {24'b0,Sum_byte};
+      end
+      default: Sum = 32'b00;
     endcase
   end
 // alu TODO seperate into own module
@@ -1111,59 +1124,60 @@ assign product = $unsigned(BusWires1) * $unsigned(BusWires2);
 assign sproduct = $signed(BusWires1) * $signed(BusWires2);
 assign suproduct = $signed(BusWires1) * $unsigned(BusWires2);
 
-always @(*)
+always @(*) begin
+  Sum_full = 32'b0;
+  ALU_Cout = 1'b0;
 
-  if (din_in) Sum_full = din;
-  else if (mul_arith) 
-    case (funct3)
-      MUL: {ALU_Cout, Sum_full} = sproduct[32:0];
-      MULH:{ALU_Cout, Sum_full} = sproduct[64:32];
-      MULSU:{ALU_Cout, Sum_full} = suproduct[32:0];
-      MULU: {ALU_Cout, Sum_full} = product[32:0];
-      DIV: {ALU_Cout, Sum_full} = $signed(BusWires1) / $signed(BusWires2);
-      DIVU: {ALU_Cout, Sum_full} = $unsigned(BusWires1) / $unsigned(BusWires2);
-      REM: {ALU_Cout, Sum_full} = $signed(BusWires1) % $signed(BusWires2);
-      REMU: {ALU_Cout, Sum_full} = $unsigned(BusWires1) % $unsigned(BusWires2);
-      default: ;
-    endcase
-  else if (Arith) //set of R-type non-add arithmetic instructions
-    case (funct3)
-      SLL: begin
-        if (opcode == R_type)  {ALU_Cout, Sum_full} = BusWires1 << BusWires2;
-        else  {ALU_Cout, Sum_full} = BusWires1 << reduced_Imm;
-      end
-      SRL: begin
-        if (opcode == R_type) begin
-          case (funct7)
-            0: {ALU_Cout, Sum_full} = BusWires1 >> BusWires2;
-            8'h20:  {ALU_Cout, Sum_full} = {BusWires1[31],$signed(BusWires1 >>> BusWires2)};
-            default:;
-          endcase
+  casez ({din_in, mul_arith, Arith, AddSub, u_op, u2_op})
+    6'b1?????: {ALU_Cout, Sum_full} = din;
+    6'b01????:
+      case (funct3)
+        MUL: {ALU_Cout, Sum_full} = sproduct[32:0];
+        MULH:{ALU_Cout, Sum_full} = sproduct[64:32];
+        MULSU:{ALU_Cout, Sum_full} = suproduct[32:0];
+        MULU: {ALU_Cout, Sum_full} = product[32:0];
+        DIV: {ALU_Cout, Sum_full} = $signed(BusWires1) / $signed(BusWires2);
+        DIVU: {ALU_Cout, Sum_full} = $unsigned(BusWires1) / $unsigned(BusWires2);
+        REM: {ALU_Cout, Sum_full} = $signed(BusWires1) % $signed(BusWires2);
+        REMU: {ALU_Cout, Sum_full} = $unsigned(BusWires1) % $unsigned(BusWires2);
+        default: ;
+      endcase
+    6'b001???: //set of R-type non-add arithmetic instructions
+      case (funct3)
+        SLL: begin
+          if (opcode == R_type)  {ALU_Cout, Sum_full} = BusWires1 << BusWires2;
+          else  {ALU_Cout, Sum_full} = BusWires1 << reduced_Imm;
         end
-        
-        else begin
-        case (Imm_funct)
-          0: {ALU_Cout, Sum_full} = BusWires1 >> reduced_Imm;
-          7'h20:  {ALU_Cout, Sum_full} = {BusWires1[31],BusWires1 >>> reduced_Imm};
-          default:;
-        endcase
-      end
-      end
-      SLT: {ALU_Cout, Sum_full} = ($signed(BusWires1) < $signed(BusWires2)) ? 32'b1: 32'b0;
-      SLTU: {ALU_Cout, Sum_full} = ($unsigned(BusWires1) < $unsigned(BusWires2)) ? 32'b1: 32'b0;
-      XOR: {ALU_Cout, Sum_full} = BusWires1 ^ BusWires2;
-      OR: {ALU_Cout, Sum_full} = BusWires1 | BusWires2;
-      AND: {ALU_Cout, Sum_full} = BusWires1 & BusWires2;
-    endcase
-  else if (AddSub) {ALU_Cout, Sum_full} = BusWires1 + ~BusWires2 + 32'b1; //sub
-  else if (opcode == U_type) begin //don't like this, TODO change into acceptable form
-    {ALU_Cout, Sum_full} = {{BusWires2[19]},BusWires2 << 12};
-  end
-  else if (opcode == U2_type) begin //don't like this, TODO change into acceptable form
-    {ALU_Cout, Sum_full} = (BusWires2 << 12) + pc-4;
-  end
-  else {ALU_Cout, Sum_full} = BusWires1 + BusWires2; //add
-
+        SRL: begin
+          if (opcode == R_type) begin
+            case (funct7)
+              0: {ALU_Cout, Sum_full} = BusWires1 >> BusWires2;
+              8'h20:  {ALU_Cout, Sum_full} = {BusWires1[31],$signed(BusWires1 >>> BusWires2)};
+              default:;
+            endcase
+          end
+          
+          else begin
+            case (Imm_funct)
+              0: {ALU_Cout, Sum_full} = BusWires1 >> reduced_Imm;
+              7'h20:  {ALU_Cout, Sum_full} = {BusWires1[31],BusWires1 >>> reduced_Imm};
+              default:;
+            endcase
+          end
+        end
+        SLT: {ALU_Cout, Sum_full} = ($signed(BusWires1) < $signed(BusWires2)) ? 32'b1: 32'b0;
+        SLTU: {ALU_Cout, Sum_full} = ($unsigned(BusWires1) < $unsigned(BusWires2)) ? 32'b1: 32'b0;
+        XOR: {ALU_Cout, Sum_full} = BusWires1 ^ BusWires2;
+        OR: {ALU_Cout, Sum_full} = BusWires1 | BusWires2;
+        AND: {ALU_Cout, Sum_full} = BusWires1 & BusWires2;
+        default: ;
+      endcase
+    6'b0001??: {ALU_Cout, Sum_full} = BusWires1 - BusWires2; //sub
+    6'b00001?: {ALU_Cout, Sum_full} = {{BusWires2[19]},BusWires2 << 12};
+    6'b000001: {ALU_Cout, Sum_full} = (BusWires2 << 12) + pc-4;
+    default : {ALU_Cout, Sum_full} = BusWires1 + BusWires2; //add
+  endcase
+end
 //FPU
 fpu ex1(
   .clk(clk),
@@ -1223,7 +1237,7 @@ always @(*)
       _R31: BusWires1 = f31;
       _PC: BusWires1 = pc-4; //pc has been incremented we want to select the old one (will have to change in pipelined)
       //_G: BusWires1
-      default: BusWires1 = 32'bx;
+      default: BusWires1 = 32'b0;
     endcase
   end
   else begin
@@ -1262,27 +1276,27 @@ always @(*)
       _R31: BusWires1 = r31;
       _PC: BusWires1 = pc-4; //pc has been incremented we want to select the old one (will have to change in pipelined)
       //_G: BusWires1
-      default: BusWires1 = 32'bx;
+      default: BusWires1 = 32'b0;
     endcase
   end
 
   always @(*)
   if (Imm) begin
     case (opcode) 
-      I_type_1: BusWires2 = {{21{I_Imm[11]}},I_Imm}; 
-      I_type_2: BusWires2 = {{21{I_Imm[11]}},I_Imm};
-      S_type: BusWires2 = {21'b0, S_Imm};
-      UJ_type: BusWires2 = {{12{UJ_Imm[20]}},UJ_Imm};
-      SB_type: BusWires2 = {{21{I_Imm}},I_Imm};
-      U_type: BusWires2 = {{12{U_Imm}},U_Imm};
-      U2_type: BusWires2 = {{12{U_Imm}},U_Imm};
-      FLW_type: BusWires2 = {{21{I_Imm[11]}},I_Imm};
-      FSW_type: BusWires2 = {21'b0, S_Imm};
+      I_type_1: BusWires2 = {{20{I_Imm[11]}},I_Imm}; 
+      I_type_2: BusWires2 = {{20{I_Imm[11]}},I_Imm};
+      S_type: BusWires2 = {20'b0, S_Imm};
+      UJ_type: BusWires2 = {{11{UJ_Imm[20]}},UJ_Imm};
+      SB_type: BusWires2 = {{20{I_Imm[11]}},I_Imm};
+      U_type: BusWires2 = {{11{U_Imm[19]}},U_Imm};
+      U2_type: BusWires2 = {{11{U_Imm[19]}},U_Imm};
+      FLW_type: BusWires2 = {{20{I_Imm[11]}},I_Imm};
+      FSW_type: BusWires2 = {20'b0, S_Imm};
       B_type: begin
-        if ((funct3 == 3'b110) | (funct3 == 3'b111)) BusWires2 = {21'b0, B_Imm};
-        else BusWires2 = {{21{B_Imm[11]}}, B_Imm};
+        if ((funct3 == 3'b110) | (funct3 == 3'b111)) BusWires2 = {20'b0, B_Imm};
+        else BusWires2 = {{20{B_Imm[11]}}, B_Imm};
       end
-      default: ;
+      default: BusWires2 = 32'b0;
     endcase
   end
   else begin
@@ -1320,7 +1334,7 @@ always @(*)
         _R29: BusWires2 = f29;
         _R30: BusWires2 = f30;
         _R31: BusWires2 = f31;
-        default: BusWires2 = 32'bx;
+        default: BusWires2 = 32'b0;
       endcase
     end
     else begin
@@ -1357,7 +1371,7 @@ always @(*)
         _R29: BusWires2 = r29;
         _R30: BusWires2 = r30;
         _R31: BusWires2 = r31;
-        default: BusWires2 = 32'bx;
+        default: BusWires2 = 32'b0;
       endcase
     end
   end
@@ -1398,17 +1412,17 @@ always @(*)
       _R31: BusWires3 = f31;
       _PC: BusWires3 = pc-4; //pc has been incremented we want to select the old one (will have to change in pipelined)
       //_G: BusWires3
-      default: BusWires3 = 32'bx;
+      default: BusWires3 = 32'b0;
     endcase
 
 regn #(
     .n(3)
 ) reg_F (
-    .D({ALU_Cout, Sum[31], (Sum == 0)}),
+    .D(arithstat),
     .resetn(resetn),
     .clk(clk),
     .En(F_in),
-    .Q({C, N, Z})
+    .Q(condstat)
 );
 
 csr csr_inst(
@@ -1470,7 +1484,7 @@ module pc_count (
   output reg [31:0] Q
 );
 always @(posedge clk)
-  if (!resetn) Q <= 16'b0;
+  if (!resetn) Q <= 32'b0;
   else if (PLoad) Q <= D;
   else if (En) Q <= Q + 'h4;
 endmodule

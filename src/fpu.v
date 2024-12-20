@@ -58,7 +58,7 @@ always@(*)
         19: result = fmsub_s_out;
         20: result = fnmadd_s_out;
         21: result = fnmsub_s_out;
-        default:;
+        default:result = 0;
     endcase
 
 //operation instantiations

@@ -8,7 +8,7 @@ module memory
 );
     reg [31:0] my_mem[0:65535]; //16 bits worth right now
 
-    always@(*) 
+    always@(posedge clk) 
         //din = my_mem[realaddr];
         if (W) my_mem[realaddr] <= dout;
         else din <= my_mem[realaddr];

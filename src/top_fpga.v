@@ -4,7 +4,15 @@ module top_fpga(/*AUTOARG*/
 	input [9:0] SW,
 	input [3:0] KEY,
 	input CLOCK_50,
-	output [9:0] LEDR
+	output [9:0] LEDR,
+	output VGA_CLK,
+	output VGA_HS, 
+	output VGA_VS, 
+	output VGA_BLANK_N, 
+	output VGA_SYNC_N, 
+	output [7:0] VGA_R, 
+	output [7:0] VGA_G, 
+	output [7:0] VGA_B
 );
 
     /*AUTOWIRE*/
@@ -23,26 +31,30 @@ module top_fpga(/*AUTOARG*/
 	wire [15:0] y;
 	wire writeEn;
 
+	//TODO use inst_mem_cs
 	wire inst_mem_cs, SW_cs, seg7_cs, LED_reg_cs, x_cs, y_cs, col_cs, vga_write_cs;
 	wire [15:0] DOUT;
 	wire [31:0] word_addr;
+	wire [31:0] pctest;
+
+	wire vga_cs;
 	
 	//TODO to modify
 	
-	assign inst_mem_cs = (word_addr[15:12] == 4'h0);
-    assign LED_reg_cs = (word_addr[15:12] == 4'h1);
-    assign seg7_cs = (word_addr[15:12] == 4'h2);
-    assign SW_cs = (word_addr[15:12] == 4'h3);
-    assign vga_cs = (word_addr[15:12] == 4'h4);
-	//assign kbd_data_cs = (word_addr == 16'h5000);  // PS2 Keyboard data register port
-    //assign kbd_makeBreak_cs = (word_addr == 16'h5001);  // PS2 Keyboard makeBreak register port
-    //assign kbd_edgeCapture_cs = (word_addr == 16'h5002);  // PS2 Keyboard edgeCapture register port
+	assign inst_mem_cs = (realaddr[15:12] == 4'h0);
+    assign LED_reg_cs = (realaddr[15:12] == 4'h1);
+    assign seg7_cs = (realaddr[15:12] == 4'h2);
+    assign SW_cs = (realaddr[15:12] == 4'h3);
+    assign vga_cs = (realaddr[15:12] == 4'h4);
+	//assign kbd_data_cs = (realaddr == 16'h5000);  // PS2 Keyboard data register port
+    //assign kbd_makeBreak_cs = (realaddr == 16'h5001);  // PS2 Keyboard makeBreak register port
+    //assign kbd_edgeCapture_cs = (realaddr == 16'h5002);  // PS2 Keyboard edgeCapture register port
 
 
-    assign x_cs = (word_addr[3:0] == 4'h0);
-    assign y_cs = (word_addr[3:0] == 4'h0);
-    assign col_cs = (word_addr[3:0] == 4'h4);
-    assign vga_write_cs = (word_addr[1:0] == 4'h8);
+    assign x_cs = (realaddr[3:0] == 4'h0);
+    assign y_cs = (realaddr[3:0] == 4'h4);
+    assign col_cs = (realaddr[3:0] == 4'h8);
+    assign vga_write_cs = (realaddr[3:0] == 4'hC);
 
 
 	assign word_addr = realaddr >> 2;
@@ -57,13 +69,6 @@ module top_fpga(/*AUTOARG*/
 	.q ( din )
 	);
 	
-	always@(*)
-		if ((word_addr > 16'b0000000000000110)) temp2 = dout; //LEDR memory mapping
-		else temp2 = 0;
-		
-	assign LEDR = temp2[9:0];
-	
-	
 	//part1 u0(.MuxSelect(SW[9:7]), .Input(SW[6:0]), .Out(LEDR[0]));
 
 	
@@ -74,18 +79,20 @@ module top_fpga(/*AUTOARG*/
 		.W			(W),
 		// Inputs
 		.din			(din[31:0]),
-		.resetn			(SW[1]),
+		.resetn			(KEY[0]),
 		.clk			(CLOCK_50),
 		.run			(SW[0]));
+		
+		
 	
 	//vga adapter module
     vga_adapter VGA(
 			.resetn(KEY[0]),
 			.clock(CLOCK_50),
-			.colour(9'h1FF),
-			.x(16'b0),
-			.y(16'b0),
-			.plot(KEY[1]),
+			.colour(colour),
+			.x(x),
+			.y(y),
+			.plot(writeEn),
 			/* Signals for the DAC to drive the monitor. */
 			.VGA_R(VGA_R),
 			.VGA_G(VGA_G),
@@ -95,7 +102,7 @@ module top_fpga(/*AUTOARG*/
 			.VGA_BLANK(VGA_BLANK_N),
 			.VGA_SYNC(VGA_SYNC_N),
 			.VGA_CLK(VGA_CLK));
-		defparam VGA.RESOLUTION = "800x600";
+		defparam VGA.RESOLUTION = "320x240";
 		defparam VGA.MONOCHROME = "FALSE";
 		defparam VGA.BITS_PER_COLOUR_CHANNEL = 3;
 		defparam VGA.BACKGROUND_IMAGE = "black.mif";
@@ -103,9 +110,10 @@ module top_fpga(/*AUTOARG*/
 
 	regn #(.n(9)) U8 (dout[8:0], KEY[0], vga_cs & W & col_cs, CLOCK_50, colour);
     regn #(.n(16)) U9 (dout[15:0], KEY[0], vga_cs & W & x_cs, CLOCK_50, x);
-    regn #(.n(16)) U10 (dout[31:16], KEY[0], vga_cs & W & y_cs, CLOCK_50, y);
+    regn #(.n(16)) U10 (dout[15:0], KEY[0], vga_cs & W & y_cs, CLOCK_50, y);
     regn #(.n(1)) U11 (dout[0], KEY[0], vga_cs & W & vga_write_cs, CLOCK_50, writeEn);
     
+	 assign LEDR[9:0] = realaddr[9:0];
 endmodule
 
 module part1(MuxSelect, Input, Out);

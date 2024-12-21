@@ -70,6 +70,7 @@ module top(/*AUTOARG*/
     regn #(.n(16)) U9 (dout[15:0], resetn, vga_cs & W & x_cs, clk, x);
     regn #(.n(16)) U10 (dout[15:0], resetn, vga_cs & W & y_cs, clk, y);
     regn #(.n(1)) U11 (dout[0], resetn, vga_cs & W & vga_write_cs, clk, writeEn);
+	
 
 	// Dump waves
     initial begin

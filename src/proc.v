@@ -16,7 +16,7 @@ reg rs2_in, rd_in, frd_in, IR_in, ADDR_in, Done, dout_in,
   load, din_in, G_in,F_in, AddSub, Arith, zero_extend, branch,
     mul_arith, ret, sys_clear, multicycle, count_rst, count_en, u_op, u2_op;
 reg [1:0] width;
-reg [2:0] Tstep_Q, Tstep_D;
+reg [4:0] Tstep_Q, Tstep_D;
 reg signed [XLEN-1:0] BusWires1;
 reg [XLEN-1:0] BusWires2,BusWires3, PCSrc;
 reg [5:0] Select1, Select2, Select3;  // BusWires selector
@@ -37,7 +37,8 @@ reg ALU_Cout;  // ALU carry-out
 wire [2:0] funct3;
 wire [6:0] opcode, funct7;
 wire [4:0] rs1, rs3, rd, rs2;  // instruction opcode and register operands
-wire [11:0] I_Imm, S_Imm, B_Imm;
+wire [11:0] I_Imm, S_Imm;
+wire [12:0] B_Imm;
 //wire [9:0] J_Imm; //Not sure if this width is correct
 wire [20:0] UJ_Imm;
 wire [19:0] U_Imm; 
@@ -112,7 +113,8 @@ dec3to8 decY (
     .Y (Fp_in)
 );  // produce r0 - r31 register enables
 
-parameter fetch = 3'b000,mem_wait = 3'b001, decode = 3'b010,  exec = 3'b011, access = 3'b100, write_back = 3'b101, fexec = 3'b110;
+parameter fetch = 4'b0000,mem_wait = 4'b0001, decode = 4'b0010,  exec = 4'b0011, access = 4'b0100, write_back = 4'b0101, fexec = 4'b0110;
+parameter mem_wait2 = 4'b1000;
 
 // Control FSM flip-flops
 // State Register
@@ -129,6 +131,9 @@ always @(*)
       else Tstep_D = mem_wait;
     end
     mem_wait: begin  // wait cycle for synchronous memory
+      Tstep_D = mem_wait2;
+    end
+    mem_wait2: begin // wait cycle for synchronous memory
       Tstep_D = decode;
     end
     decode: begin  // this time step stores the instruction word in IR
@@ -148,7 +153,7 @@ always @(*)
     write_back: begin  // instructions end after this time step
       Tstep_D = fetch;
     end
-    default: Tstep_D = 3'bxxx;
+    default: Tstep_D = 4'bxxxx;
   endcase
 
 
@@ -223,6 +228,9 @@ always @(*) begin  // Output Logic
     end
 
     mem_wait: begin  // wait cycle for synchronous memory
+    end
+
+    mem_wait2: begin  // wait cycle for synchronous memory
     end
 
     decode: IR_in = 1'b1;  // store instruction on din in IR
@@ -1100,6 +1108,7 @@ end
 else begin
   PCSrc = mtvec;
 end
+
 always@(*)
   if (fpSel) begin
     Sum = fSum;
@@ -1172,7 +1181,7 @@ always @(*) begin
         AND: {ALU_Cout, Sum_full} = BusWires1 & BusWires2;
         default: ;
       endcase
-    6'b0001??: {ALU_Cout, Sum_full} = BusWires1 - BusWires2; //sub
+    6'b0001??: {ALU_Cout, Sum_full} = {BusWires1[31], BusWires1} + {~BusWires2[31],~BusWires2} + 1; //sub
     6'b00001?: {ALU_Cout, Sum_full} = {{BusWires2[19]},BusWires2 << 12};
     6'b000001: {ALU_Cout, Sum_full} = (BusWires2 << 12) + pc-4;
     default : {ALU_Cout, Sum_full} = BusWires1 + BusWires2; //add
@@ -1235,7 +1244,7 @@ always @(*)
       _R29: BusWires1 = f29;
       _R30: BusWires1 = f30;
       _R31: BusWires1 = f31;
-      _PC: BusWires1 = pc-4; //pc has been incremented we want to select the old one (will have to change in pipelined)
+      _PC: BusWires1 = pc- 32'h4; //pc has been incremented we want to select the old one (will have to change in pipelined)
       //_G: BusWires1
       default: BusWires1 = 32'b0;
     endcase
@@ -1274,7 +1283,7 @@ always @(*)
       _R29: BusWires1 = r29;
       _R30: BusWires1 = r30;
       _R31: BusWires1 = r31;
-      _PC: BusWires1 = pc-4; //pc has been incremented we want to select the old one (will have to change in pipelined)
+      _PC: BusWires1 = pc - 32'h4; //pc has been incremented we want to select the old one (will have to change in pipelined)
       //_G: BusWires1
       default: BusWires1 = 32'b0;
     endcase
@@ -1288,13 +1297,13 @@ always @(*)
       S_type: BusWires2 = {20'b0, S_Imm};
       UJ_type: BusWires2 = {{11{UJ_Imm[20]}},UJ_Imm};
       SB_type: BusWires2 = {{20{I_Imm[11]}},I_Imm};
-      U_type: BusWires2 = {{11{U_Imm[19]}},U_Imm};
-      U2_type: BusWires2 = {{11{U_Imm[19]}},U_Imm};
+      U_type: BusWires2 = {{12{U_Imm[19]}},U_Imm};
+      U2_type: BusWires2 = {{12{U_Imm[19]}},U_Imm};
       FLW_type: BusWires2 = {{20{I_Imm[11]}},I_Imm};
       FSW_type: BusWires2 = {20'b0, S_Imm};
       B_type: begin
-        if ((funct3 == 3'b110) | (funct3 == 3'b111)) BusWires2 = {20'b0, B_Imm};
-        else BusWires2 = {{20{B_Imm[11]}}, B_Imm};
+        if ((funct3 == 3'b110) | (funct3 == 3'b111)) BusWires2 = {19'b0, B_Imm};
+        else BusWires2 = {{19{B_Imm[11]}}, B_Imm};
       end
       default: BusWires2 = 32'b0;
     endcase
@@ -1410,7 +1419,7 @@ always @(*)
       _R29: BusWires3 = f29;
       _R30: BusWires3 = f30;
       _R31: BusWires3 = f31;
-      _PC: BusWires3 = pc-4; //pc has been incremented we want to select the old one (will have to change in pipelined)
+      _PC: BusWires3 = pc - 32'h4; //pc has been incremented we want to select the old one (will have to change in pipelined)
       //_G: BusWires3
       default: BusWires3 = 32'b0;
     endcase
@@ -1486,7 +1495,7 @@ module pc_count (
 always @(posedge clk)
   if (!resetn) Q <= 32'b0;
   else if (PLoad) Q <= D;
-  else if (En) Q <= Q + 'h4;
+  else if (En) Q <= Q + 32'h4;
 endmodule
 
 module sp_count (  // sync. up/down counter w/ parallel load & active-low reset

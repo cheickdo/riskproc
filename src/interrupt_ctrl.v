@@ -14,7 +14,7 @@ module interrupt_ctrl(
     input time_compare,
     input [31:0] Sum,
     //input done,
-    input [2:0] Tstep_Q,
+    input [4:0] Tstep_Q,
 
     output reg [31:0] mip,
     output reg [31:0] mcause,
@@ -27,7 +27,7 @@ module interrupt_ctrl(
 );
     parameter XLEN = 32;
     parameter S_type = 7'b0100011,I_type_1=7'b0000011;
-    parameter access = 3'b100, write_back = 3'b101;
+    parameter access = 4'b0100, write_back = 4'b0101;
 
     //WIRES
     wire machine_global_ie;

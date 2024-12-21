@@ -89,7 +89,7 @@ async def proc_simple_test(dut):
     await RisingEdge(dut.clk)
     await RisingEdge(dut.clk)
     dut.resetn.value = 1
-    for i in range(2000):
+    for i in range(5000):
         await RisingEdge(dut.clk)
 
     print(dut.mem0.my_mem[6].value)

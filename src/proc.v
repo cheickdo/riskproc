@@ -13,7 +13,7 @@ parameter FLEN = 32;
 
 wire [XLEN-1:0] R_in;  // r0, ..., r7 register enables
 reg rs2_in, rd_in, frd_in, IR_in, ADDR_in, Done, dout_in, 
-  load, din_in, G_in,F_in, AddSub, Arith, zero_extend, branch,
+  load, store, din_in, G_in,F_in, AddSub, Arith, zero_extend, branch,
     mul_arith, ret, sys_clear, multicycle, count_rst, count_en, u_op, u2_op;
 reg [1:0] width;
 reg [4:0] Tstep_Q, Tstep_D;
@@ -23,6 +23,8 @@ reg [5:0] Select1, Select2, Select3;  // BusWires selector
 reg fpSel, fBusSel;
 wire [31:0] fstage;
 
+reg [XLEN-1:0] din_mux;
+reg [XLEN-1:0] realaddr_next;
 reg [XLEN-1:0] Sum_full;
 wire [XLEN-1:0] fSum;
 wire [7:0] Sum_byte = Sum_full[7:0];
@@ -82,6 +84,7 @@ wire [XLEN-1:0] mepc;
 wire [XLEN-1:0] mcause;
 wire [XLEN-1:0] mbadaddr;
 wire [XLEN-1:0] mtvec;
+wire [XLEN-1:0] csr_readbus;
 wire [FLEN-1:0] fcsr;
 
 wire [6:0] Imm_funct = I_Imm[11:5];
@@ -122,6 +125,10 @@ always @(posedge clk)
   if (!resetn) Tstep_Q <= fetch;
   else Tstep_Q <= Tstep_D;
 
+//address state control for bus multiplexer
+always@(posedge clk)
+  realaddr_next <= realaddr;
+
 // Control FSM state table (Next State Logic). TODO move it to seperate module?
 // Is a function of current state (Tstep_Q) and inputs (run and Done)
 always @(*)
@@ -131,11 +138,11 @@ always @(*)
       else Tstep_D = mem_wait;
     end
     mem_wait: begin  // wait cycle for synchronous memory
-      Tstep_D = mem_wait2;
-    end
-    mem_wait2: begin // wait cycle for synchronous memory
       Tstep_D = decode;
     end
+    //mem_wait2: begin // wait cycle for synchronous memory
+    //  Tstep_D = decode;
+    //end
     decode: begin  // this time step stores the instruction word in IR
       Tstep_D =  exec;
     end
@@ -208,6 +215,7 @@ always @(*) begin  // Output Logic
   sp_decr   = 1'b0;
   branch = 1'b0;
   load = 1'b0;
+  store = 1'b0;
   zero_extend = 1'b0;
   ret = 1'b0;
   fpSel = 1'b0;
@@ -261,7 +269,8 @@ always @(*) begin  // Output Logic
       I_type_1: begin //load integer
             Imm = 1'b1;
             Select1 = {1'b0, rs1[4:0]};
-            G_in = 1'b1;
+            load = 1'b1;
+            //G_in = 1'b1;
             //din_in = 1'b1; //new change
       end
       
@@ -326,7 +335,8 @@ always @(*) begin  // Output Logic
       FLW_type: begin //Load float
             Imm = 1'b1;
             Select1 = {1'b0, rs1[4:0]};
-            G_in = 1'b1;
+            //G_in = 1'b1;
+            load = 1'b1;
             //din_in = 1'b1; //new change
       end
 
@@ -668,7 +678,7 @@ always @(*) begin  // Output Logic
             end
             default: width = 2'b00;
             endcase
-            load = 1'b1;
+            //load = 1'b1;
             G_in = 1'b1;
             din_in = 1'b1;
       end
@@ -767,7 +777,7 @@ always @(*) begin  // Output Logic
       FLW_type: begin //load floating
             //ADDR_in = 1'b1;
             width = 2'b00;
-            load = 1'b1;
+            //load = 1'b1;
             G_in = 1'b1;
             din_in = 1'b1;
       end
@@ -808,7 +818,7 @@ always @(*) begin  // Output Logic
         endcase
             //load = 1'b1;
             //G_in = 1'b1;
-            load = 1'b1;
+            store = 1'b1;
             Done = 1'b1; 
       end
         
@@ -953,7 +963,7 @@ always @(*) begin  // Output Logic
         width = 2'b00;
         //load = 1'b1;
         //G_in = 1'b1;
-        load = 1'b1;
+        store = 1'b1;
         Done = 1'b1; 
       end
       default: ;
@@ -1077,11 +1087,12 @@ regn reg_ADDR (
 ); //check load, if yes, ADDR <-
 
 always@(*) //memory being tested is word addressable and the convertion is being don in the 
-  if (load) realaddr = (G);
+  if (store) realaddr = (G);
+  else if (load) realaddr = Sum_full;
   else realaddr = ADDR;
 
 regn reg_IR (
-    .D(din),
+    .D(din_mux),
     .resetn(resetn),
     .En(IR_in),
     .clk(clk),
@@ -1100,7 +1111,7 @@ parameter lsl = 2'b00, lsr = 2'b01, asr = 2'b10, ror = 2'b11;
 
 //pc logic unit
 always @(*)
-if (ret) PCSrc = mepc;
+if (ret) PCSrc = mepc-4;
 else if (!trap) begin
   if (branch) PCSrc = G; 
   else PCSrc = pc + 4;
@@ -1108,6 +1119,15 @@ end
 else begin
   PCSrc = mtvec;
 end
+
+//csr bus multiplexer
+always@(*)
+  if ((realaddr_next[13:10] == 4'hF) | (realaddr_next[13:10] == 4'h3) | (realaddr_next[13:10] == 4'h8) | (realaddr_next[13:10] == 4'h7) | (realaddr_next[13:10] == 4'h9)) begin
+    din_mux = csr_readbus;
+  end
+  else begin
+    din_mux = din;
+  end
 
 always@(*)
   if (fpSel) begin
@@ -1138,7 +1158,7 @@ always @(*) begin
   ALU_Cout = 1'b0;
 
   casez ({din_in, mul_arith, Arith, AddSub, u_op, u2_op})
-    6'b1?????: {ALU_Cout, Sum_full} = din;
+    6'b1?????: {ALU_Cout, Sum_full} = din_mux;
     6'b01????:
       case (funct3)
         MUL: {ALU_Cout, Sum_full} = sproduct[32:0];
@@ -1451,7 +1471,7 @@ csr csr_inst(
   .time_compare(time_compare),
   .fcsr(fcsr),
   .fflags(fflags),
-  .csr_readbus()
+  .csr_readbus(csr_readbus)
 );
 
 interrupt_ctrl interrupt_ctrl_inst(
@@ -1468,7 +1488,7 @@ interrupt_ctrl interrupt_ctrl_inst(
   //.done(Done),
   .Tstep_Q(Tstep_Q),
   .addr(realaddr),
-  .load(load),
+  .load(store), //TODO fix this
   .W(W),
   .resetn(resetn),
   .time_compare(time_compare),

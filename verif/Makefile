@@ -6,16 +6,17 @@ SIM ?= icarus
 TOPLEVEL_LANG ?= verilog
 
 VERILOG_SOURCES += $(PWD)/../src/proc.v $(PWD)/../src/regn.v 
-VERILOG_SOURCES +=$(PWD)/../src/top.v $(PWD)/../src/memory.v $(PWD)/../src/regarray.v $(PWD)/../src/fregarray.v $(PWD)/../src/csr.v
-VERILOG_SOURCES += $(PWD)/../src/interrupt_ctrl.v  $(PWD)/../src/counter.v $(PWD)/../src/fpu.v
-VERILOG_SOURCES += $(PWD)/../src/fmul.v $(PWD)/../src/fpadd.v  $(PWD)/../src/fdiv.v  $(PWD)/../src/fsqrt.v  $(PWD)/../src/fcvt_s_w.v $(PWD)/../src/fcvt_s_wu.v  
-VERILOG_SOURCES += $(PWD)/../src/fcvt_w_s.v $(PWD)/../src/fcvt_wu_s.v  $(PWD)/../src/fclass.v $(PWD)/../src/fmax.v $(PWD)/../src/fmin.v  
-VERILOG_SOURCES += $(PWD)/../src/fsgnjx_s.v $(PWD)/../src/fsgnj_s.v  $(PWD)/../src/fsgnjn_s.v $(PWD)/../src/flt.v $(PWD)/../src/fle.v  $(PWD)/../src/feq.v
-VERILOG_SOURCES += $(PWD)/../src/fmadd_s.v $(PWD)/../src/fnmadd_s.v 
+VERILOG_SOURCES +=$(PWD)/../src/top.v $(PWD)/../src/memory.v $(PWD)/../src/regarray.v $(PWD)/../src/float/fregarray.v $(PWD)/../src/csr.v
+VERILOG_SOURCES += $(PWD)/../src/interrupt_ctrl.v  $(PWD)/../src/counter.v $(PWD)/../src/float/fpu.v
+VERILOG_SOURCES += $(PWD)/../src/float/fmul.v $(PWD)/../src/float/fpadd.v  $(PWD)/../src/float/fdiv.v  $(PWD)/../src/float/fsqrt.v  $(PWD)/../src/float/fcvt_s_w.v $(PWD)/../src/float/fcvt_s_wu.v  
+VERILOG_SOURCES += $(PWD)/../src/float/fcvt_w_s.v $(PWD)/../src/float/fcvt_wu_s.v  $(PWD)/../src/float/fclass.v $(PWD)/../src/float/fmax.v $(PWD)/../src/float/fmin.v  
+VERILOG_SOURCES += $(PWD)/../src/float/fsgnjx_s.v $(PWD)/../src/float/fsgnj_s.v  $(PWD)/../src/float/fsgnjn_s.v $(PWD)/../src/float/flt.v $(PWD)/../src/float/fle.v  $(PWD)/../src/float/feq.v
+VERILOG_SOURCES += $(PWD)/../src/float/fmadd_s.v $(PWD)/../src/float/fnmadd_s.v 
 
-TOPLEVEL = top
+VERILOG_SOURCES += $(PWD)/../src/dynamic/sync_fifo.v $(PWD)/../src/dynamic/dispatcher.v
+TOPLEVEL = dispatcher
 
-MODULE = tb
+MODULE = dispatcher_test
 
 #proc_simple_test: $(MAKE) sim SIM_ARGS='-gARG=1' MODULE=tb TESTCASE=proc_simple_test
 

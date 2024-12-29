@@ -10,6 +10,7 @@ module pipeline(
 
 parameter XLEN = 32;
 parameter FLEN = 32;
+parameter FIELD_WIDTH = 55;
 
 //wire trap = 0;
 wire [XLEN-1:0] R_in;  // r0, ..., r7 register enables
@@ -21,13 +22,16 @@ reg ADDR_in;
 reg pc_in;
 reg enq_ifq, deq_ifq;
 reg [2:0] Tstep_D, Tstep_Q;
+reg rd_in, frd_in;
+wire [4:0] rd;
+reg [31:0] G;
 
-reg [XLEN-1:0] intalu_data_i, fpalu_data_i, agu_data_i;
+wire [FIELD_WIDTH-1:0] intalu_data_o, fpalu_data_o, agu_data_o;
 
 //reg wires
 wire [XLEN-1:0] r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11,
   r12, r13, r14, r15, r16, r17, r18, r19, r20, r21, r22, r23, r24, r25, r26, r27, r28
-  , r29, r30, r31, pc;
+  , r29, r30, r31;
 
 wire [FLEN-1:0] f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11,
 f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28
@@ -120,25 +124,14 @@ dispatcher d0(
     .full_agu(full_agu),
     .full_ifq(full_ifq),
     .empty_ifq(empty_ifq),
-    .enq_intalu(enq_intalu),
-    .enq_fpalu(enq_fpalu),
-    .enq_agu(enq_agu),
-    .intalu_data_i(intalu_data_i),
-    .fpalu_data_i(fpalu_data_i),
-    .agu_data_i(agu_data_i)
+    .alu_ready_i(1'b1),
+    .fpalu_ready_i(fpalu_ready_i), 
+    .agu_ready_i(agu_ready_i),
+    .intalu_data_o(intalu_data_o),
+    .fpalu_data_o(fpalu_data_o),
+    .agu_data_o(agu_data_o)
 );
 
-//instantiate issue queues and send data to them
-issue_queue intq(
-    .clk(clk),
-    .resetn(resetn),
-    .enq(enq_intalu),
-    .deq(1'b0),
-    .data_in(intalu_data_i),
-    .data_out(),
-    .full(),
-    .empty()
-);
 //instantiate functional units and send data to them
 
 //instantiate writeback unit and send data to it

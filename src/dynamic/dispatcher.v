@@ -1,17 +1,20 @@
-module dispatcher #(parameter XLEN=32) (
+module dispatcher #(parameter XLEN=32, parameter FIELD_WIDTH=55) (
     input clk, resetn,
     input enq_ifq,
     input deq_ifq,
     input [XLEN-1:0] data_in_ifq,
     input full_intalu, full_fpalu, full_agu,
+    input alu_ready_i, fpalu_ready_i, agu_ready_i,
     output full_ifq, empty_ifq,
-    output reg enq_intalu, enq_fpalu, enq_agu,
-    output reg [XLEN-1:0] intalu_data_i, fpalu_data_i, agu_data_i
+    output [FIELD_WIDTH-1:0] intalu_data_o, fpalu_data_o, agu_data_o
 );
 
 wire [6:0] opcode;
-reg [1:0] queue_sel;
 wire [XLEN-1:0] data_out_ifq;
+
+reg [1:0] queue_sel;
+reg enq_intalu, enq_fpalu, enq_agu;
+reg [XLEN-1:0] intalu_data_i, fpalu_data_i, agu_data_i;
 
 parameter INTALU = 2'b00, FPALU = 2'b01, AGU = 2'b10;
 
@@ -83,6 +86,18 @@ always@(posedge clk) begin
     end
 end
 
+//instantiate issue queues and send data to them
+issue_queue int_q(
+    .clk(clk),
+    .resetn(resetn),
+    .enq(enq_intalu),
+    .deq(1'b0),
+    .data_in(intalu_data_i),
+    .data_out(intalu_data_o),
+    .ready_i(alu_ready_i),
+    .full(),
+    .empty()
+);
 
 // Dump waves
 initial begin

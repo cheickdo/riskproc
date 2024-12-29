@@ -4,13 +4,101 @@ module alu(
     input [6:0] funct7,
     input [31:0] BusWires1,
     input [31:0] BusWires2,
+    input data_out_valid,
     input [6:0] Imm_funct,
-    output reg Sum
+    output reg Sum,
+    output reg Sum_valid
 );
 
 reg [31:0] Sum_full;
 reg [15:0] Sum_half;
 reg ALU_Cout;
+
+//opcode types
+parameter R_type = 7'b0110011, I_type_1=7'b0000011, I_type_2 = 7'b0010011;
+parameter SB_type = 7'b1100111, S_type = 7'b0100011, U_type = 7'b0110111, UJ_type=7'b1101111, U2_type = 7'b0010111, B_type = 7'b1100011;
+parameter SYSTEM_type = 7'b1110011;
+parameter FLW_type = 7'b0000111, FSW_type = 7'b0100111, FMADD_type = 7'b1000011, FMSUB_type = 7'b1000111,
+    FNMSUB_type = 7'b1001011, FNMADD_type = 7'b1001111, F_type = 7'b1010011;
+
+always@(*) begin
+  case (opcode)
+        R_type: begin
+          Select1 = {1'b0, rs1[4:0]};
+          Select2 = {1'b0, rs2[4:0]};
+          G_in = 1'b1;
+
+          if (funct7[0] == 1)begin //MUL instructions
+            mul_arith = 1'b1;
+          end
+          else begin
+            case (funct3)
+              0: begin //add 
+                if (funct7[5] == 1) AddSub = 1'b1;
+              end 
+              default: begin
+                Arith = 1'b1;
+              end
+
+            endcase
+          end
+        end
+        
+        I_type_2: begin
+          Select1 = {1'b0, rs1[4:0]};
+          Imm = 1'b1;
+          G_in = 1'b1;
+          case (funct3)
+            0: begin //add is default
+            end
+            default: begin
+              Arith = 1'b1;
+            end
+
+          endcase
+        end
+
+        UJ_type: begin
+          Select1 = _PC;
+          Select2 = _R0;
+          G_in = 1'b1;
+        end
+
+        SB_type: begin
+          case (funct3) 
+            0: begin
+              Select1 = _PC;
+              Select2 = _R0;
+              G_in = 1'b1;
+            end
+            default: ;
+          endcase
+        end
+
+        U_type: begin //Load Upper Imm
+          Select1 = _R0;
+          Imm = 1'b1;
+          G_in = 1'b1;
+          u_op = 1'b1;
+        end
+
+        U2_type: begin //Load Upper Imm
+          Select1 = _R0;
+          Imm = 1'b1;
+          G_in = 1'b1;
+        end
+
+        B_type: begin //conditional branches, do a subtraction and check the value
+          Select1 = {1'b0, rs1[4:0]};
+          Select2 = {1'b0, rs2[4:0]};
+          F_in = 1'b1;
+          //G_in = 1'b1;
+          AddSub = 1'b1;
+        end
+
+        default: ;
+      endcase
+  end
 
 always@(*)
     case(width)

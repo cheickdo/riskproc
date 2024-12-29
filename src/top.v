@@ -44,7 +44,7 @@ module top(/*AUTOARG*/
 		
 	assign LEDR = temp2[9:0];
 
-    proc core0 (//simulation core
+    pipeline core0 (//simulation core
 		// Outputs
 		.dout			(dout[31:0]),
 		.realaddr		(realaddr[31:0]),

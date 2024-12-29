@@ -38,7 +38,7 @@ wire [4:0] fflags;
 reg ALU_Cout;  // ALU carry-out
 wire [2:0] funct3;
 wire [6:0] opcode, funct7;
-wire [4:0] rs1, rs3, rd, rs2;  // instruction opcode and register operands
+wire [4:0] rs1, rs3, rd, rs2;  // instruction opcode and register operandsbegin
 wire [11:0] I_Imm, S_Imm;
 wire [12:0] B_Imm;
 //wire [9:0] J_Imm; //Not sure if this width is correct
@@ -1079,12 +1079,12 @@ regn reg_dout (
 );
 
 regn reg_ADDR (
-    .D(pc), //changed G to pc since G is used in realaddr
+    .D(pc), 
     .resetn(resetn),
     .En(ADDR_in),
     .clk(clk),
     .Q(ADDR)
-); //check load, if yes, ADDR <-
+); 
 
 always@(*) //memory being tested is word addressable and the convertion is being don in the 
   if (store) realaddr = (G);

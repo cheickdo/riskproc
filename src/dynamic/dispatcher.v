@@ -1,22 +1,22 @@
-module dispatcher(
+module dispatcher #(parameter XLEN=32) (
     input clk, resetn,
     input enq_ifq,
     input deq_ifq,
-    input [31:0] data_in_ifq,
+    input [XLEN-1:0] data_in_ifq,
     input full_intalu, full_fpalu, full_agu,
     output full_ifq, empty_ifq,
     output reg enq_intalu, enq_fpalu, enq_agu,
-    output reg [31:0] intalu_data_i, fpalu_data_i, agu_data_i
+    output reg [XLEN-1:0] intalu_data_i, fpalu_data_i, agu_data_i
 );
 
 wire [6:0] opcode;
 reg [1:0] queue_sel;
-wire [31:0] data_out_ifq;
+wire [XLEN-1:0] data_out_ifq;
 
 parameter INTALU = 2'b00, FPALU = 2'b01, AGU = 2'b10;
 
 //Instruction fetch queue
-sync_fifo #(8, 32) ifq (
+sync_fifo #(8, XLEN) ifq (
     .clk(clk),
     .resetn(resetn),
     .enq(enq_ifq),

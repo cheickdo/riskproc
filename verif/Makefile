@@ -13,10 +13,10 @@ VERILOG_SOURCES += $(PWD)/../src/float/fcvt_w_s.v $(PWD)/../src/float/fcvt_wu_s.
 VERILOG_SOURCES += $(PWD)/../src/float/fsgnjx_s.v $(PWD)/../src/float/fsgnj_s.v  $(PWD)/../src/float/fsgnjn_s.v $(PWD)/../src/float/flt.v $(PWD)/../src/float/fle.v  $(PWD)/../src/float/feq.v
 VERILOG_SOURCES += $(PWD)/../src/float/fmadd_s.v $(PWD)/../src/float/fnmadd_s.v 
 
-VERILOG_SOURCES += $(PWD)/../src/dynamic/sync_fifo.v $(PWD)/../src/dynamic/dispatcher.v
-TOPLEVEL = dispatcher
+VERILOG_SOURCES += $(PWD)/../src/dynamic/sync_fifo.v $(PWD)/../src/dynamic/dispatcher.v $(PWD)/../src/dynamic/pipeline.v $(PWD)/../src/dynamic/issue_queue.v
+TOPLEVEL = top
 
-MODULE = dispatcher_test
+MODULE = tb
 
 #proc_simple_test: $(MAKE) sim SIM_ARGS='-gARG=1' MODULE=tb TESTCASE=proc_simple_test
 

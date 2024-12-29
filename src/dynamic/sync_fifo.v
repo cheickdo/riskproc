@@ -7,7 +7,7 @@ module sync_fifo #(parameter DEPTH = 8, DATA_WIDTH=32) (
 );
   
   reg [$clog2(DEPTH)-1:0] w_ptr, r_ptr;
-  reg [DATA_WIDTH-1:0] fifo[DEPTH];
+  reg [DATA_WIDTH-1:0] fifo [DEPTH];
   reg [$clog2(DEPTH)-1:0] count;
   
   // Set Default values on reset.

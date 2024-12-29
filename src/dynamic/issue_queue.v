@@ -2,6 +2,7 @@ module issue_queue #(parameter DATA_WIDTH=32, parameter DEPTH=16, parameter FIEL
     input clk, resetn,
     input enq, deq,
     input ready_i,
+    input [32:0] rs1_i, rs2_i, rd_i,
     input [DATA_WIDTH-1:0] data_in,
     output reg [FIELD_WIDTH-1:0] data_out,
     output reg data_out_valid,
@@ -30,14 +31,19 @@ reg [$clog2(DEPTH)-1:0] addr_in, addr_out;
 reg [FIELD_WIDTH-1:0] test;
 reg [$clog2(DEPTH)-1:0] count;
 
-wire all_ready;
+wire any_ready;
+wire rs1_valid, rs2_valid;
 
-assign all_ready = |(operand1_ready & operand2_ready);
+assign any_ready = |(operand1_ready & operand2_ready);
+assign rs1_valid = rs1_i[32];
+assign rs2_valid = rs2_i[32];
 
 //bit 18 of the queue is the allocation bit
 always@(*) begin
     for (int i=0; i<DEPTH; i=i+1) begin
         allocation[i] = queue[i][18];
+        operand1_ready[i] = queue[i][12];
+        operand2_ready[i] = queue[i][6];
     end
 end
 
@@ -92,7 +98,7 @@ always@(posedge clk) begin
             2'b10: begin
                 //enqueue
                 if (!full) begin
-                    queue[addr_in] <= {4'b0, data_in, 1'b1, 16'b0};
+                    queue[addr_in] <= {4'b0, data_in, 1'b1, 5'b0, ~rs1_valid, 5'b0, ~rs2_valid, 5'b0, 1'b0};
                     count <= count + 1;
                 end
             end
@@ -102,7 +108,7 @@ end
 
 always@(posedge clk) begin
     if (!resetn) data_out_valid <= 0;
-    else if (ready_i & !empty & all_ready) data_out_valid <= 1;
+    else if (ready_i & !empty & any_ready) data_out_valid <= 1;
 end
 
 assign full = (count == DEPTH-1);

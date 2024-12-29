@@ -5,7 +5,9 @@ module dispatcher #(parameter XLEN=32, parameter FIELD_WIDTH=55) (
     input [XLEN-1:0] data_in_ifq,
     input full_intalu, full_fpalu, full_agu,
     input alu_ready_i, fpalu_ready_i, agu_ready_i,
+    input [32:0] rs1_i, rs2_i, rd_i,
     output full_ifq, empty_ifq,
+    output [4:0] rs1_sel, rs2_sel, rd_sel,
     output [FIELD_WIDTH-1:0] intalu_data_o, fpalu_data_o, agu_data_o
 );
 
@@ -36,6 +38,10 @@ sync_fifo #(8, XLEN) ifq (
 //Store & Loads 0000011, 0100011, 0000111, 0100111
 
 assign opcode = data_out_ifq[6:0];
+assign rd_sel = data_out_ifq[11:7];
+assign funct3 = data_out_ifq[14:12];
+assign rs1_sel  = data_out_ifq[19:15];
+assign rs2_sel = data_out_ifq[24:20];
 
 //Note: garbage in garbage out, correctness of opcode is assumed
 always@(*) begin
@@ -95,6 +101,9 @@ issue_queue int_q(
     .data_in(intalu_data_i),
     .data_out(intalu_data_o),
     .ready_i(alu_ready_i),
+    .rs1_i(rs1_i),
+    .rs2_i(rs2_i),
+    .rd_i(rd_i),
     .full(),
     .empty()
 );

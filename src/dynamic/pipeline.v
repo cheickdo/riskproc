@@ -24,12 +24,14 @@ reg enq_ifq, deq_ifq;
 reg [2:0] Tstep_D, Tstep_Q;
 reg rd_in, frd_in;
 wire [4:0] rd;
-reg [31:0] G;
+reg [32:0] G;
+wire [4:0] rs1_sel, rs2_sel, rd_sel;
+reg [XLEN:0] rs1_i, rs2_i, rd_i;
 
 wire [FIELD_WIDTH-1:0] intalu_data_o, fpalu_data_o, agu_data_o;
 
 //reg wires
-wire [XLEN-1:0] r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11,
+wire [XLEN:0] r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11,
   r12, r13, r14, r15, r16, r17, r18, r19, r20, r21, r22, r23, r24, r25, r26, r27, r28
   , r29, r30, r31;
 
@@ -40,6 +42,13 @@ wire [FLEN-1:0] Fp_in;  // f0, ..., f7 register enables
 
 //state machine governing pc incrementation and branching
 parameter fetch = 3'b000,mem_wait = 3'b001, decode = 3'b010;
+
+parameter _R0 = 5'b00000, _R1 = 5'b00001, _R2 = 5'b00010, _R3 = 5'b00011, _R4 = 5'b00100, 
+      _R5 = 5'b00101, _R6 = 5'b00110, _R7 = 5'b00111, _R8 = 5'b01000,  _R9 = 5'b01001,  _R10 = 5'b01010,  _R11 = 5'b01011,
+        _R12 = 5'b01100,  _R13 = 5'b01101,  _R14 = 5'b01110,  _R15 = 5'b01111,  _R16 = 5'b10000,
+        _R17 = 5'b10001,  _R18 = 5'b10010,  _R19 = 5'b10011,  _R20 = 5'b10100,  _R21 = 5'b10101,
+          _R22 = 5'b10110,  _R23 = 5'b10111,  _R24 = 5'b11000,  _R25 = 5'b11001,  _R26 = 5'b11010,
+          _R27 = 5'b11011,  _R28 = 5'b11100,  _R29 = 5'b11101,  _R30 = 5'b11110,  _R31 = 5'b11111;
 
 // Control FSM flip-flops
 // State Register
@@ -127,6 +136,12 @@ dispatcher d0(
     .alu_ready_i(1'b1),
     .fpalu_ready_i(fpalu_ready_i), 
     .agu_ready_i(agu_ready_i),
+    .rs1_i(rs1_i),
+    .rs2_i(rs2_i),
+    .rd_i(rd_i),
+    .rs1_sel(rs1_sel),
+    .rs2_sel(rs2_sel),
+    .rd_sel(rd_sel),
     .intalu_data_o(intalu_data_o),
     .fpalu_data_o(fpalu_data_o),
     .agu_data_o(agu_data_o)
@@ -153,45 +168,46 @@ dec3to8 decY (
 
 regarray regs (/*AUTOINST*/
     // Outputs
-    .r0			(r0[XLEN-1:0]),
-    .r1			(r1[XLEN-1:0]),
-    .r2			(r2[XLEN-1:0]),
-    .r3			(r3[XLEN-1:0]),
-    .r4			(r4[XLEN-1:0]),
-    .r5			(r5[XLEN-1:0]),
-    .r6			(r6[XLEN-1:0]),
-    .r7			(r7[XLEN-1:0]),
-    .r8			(r8[XLEN-1:0]),
-    .r9			(r9[XLEN-1:0]),
-    .r10			(r10[XLEN-1:0]),
-    .r11			(r11[XLEN-1:0]),
-    .r12			(r12[XLEN-1:0]),
-    .r13			(r13[XLEN-1:0]),
-    .r14			(r14[XLEN-1:0]),
-    .r15			(r15[XLEN-1:0]),
-    .r16			(r16[XLEN-1:0]),
-    .r17			(r17[XLEN-1:0]),
-    .r18			(r18[XLEN-1:0]),
-    .r19			(r19[XLEN-1:0]),
-    .r20			(r20[XLEN-1:0]),
-    .r21			(r21[XLEN-1:0]),
-    .r22			(r22[XLEN-1:0]),
-    .r23			(r23[XLEN-1:0]),
-    .r24			(r24[XLEN-1:0]),
-    .r25			(r25[XLEN-1:0]),
-    .r26			(r26[XLEN-1:0]),
-    .r27			(r27[XLEN-1:0]),
-    .r28			(r28[XLEN-1:0]),
-    .r29			(r29[XLEN-1:0]),
-    .r30			(r30[XLEN-1:0]),
-    .r31			(r31[XLEN-1:0]),
+    .r0			(r0[XLEN:0]),
+    .r1			(r1[XLEN:0]),
+    .r2			(r2[XLEN:0]),
+    .r3			(r3[XLEN:0]),
+    .r4			(r4[XLEN:0]),
+    .r5			(r5[XLEN:0]),
+    .r6			(r6[XLEN:0]),
+    .r7			(r7[XLEN:0]),
+    .r8			(r8[XLEN:0]),
+    .r9			(r9[XLEN:0]),
+    .r10			(r10[XLEN:0]),
+    .r11			(r11[XLEN:0]),
+    .r12			(r12[XLEN:0]),
+    .r13			(r13[XLEN:0]),
+    .r14			(r14[XLEN:0]),
+    .r15			(r15[XLEN:0]),
+    .r16			(r16[XLEN:0]),
+    .r17			(r17[XLEN:0]),
+    .r18			(r18[XLEN:0]),
+    .r19			(r19[XLEN:0]),
+    .r20			(r20[XLEN:0]),
+    .r21			(r21[XLEN:0]),
+    .r22			(r22[XLEN:0]),
+    .r23			(r23[XLEN:0]),
+    .r24			(r24[XLEN:0]),
+    .r25			(r25[XLEN:0]),
+    .r26			(r26[XLEN:0]),
+    .r27			(r27[XLEN:0]),
+    .r28			(r28[XLEN:0]),
+    .r29			(r29[XLEN:0]),
+    .r30			(r30[XLEN:0]),
+    .r31			(r31[XLEN:0]),
     // Inputs
-    .G			(G[31:0]),
+    .G			(G[32:0]),
     .resetn		(resetn),
     .R_in			(R_in[31:0]), 
     .clk			(clk));
 
-regarray fregs (/*AUTOINST*/
+/*
+regarray fregs (
 		 // Outputs
 		 .r0			(f0[FLEN-1:0]),
 		 .r1			(f1[FLEN-1:0]),
@@ -230,6 +246,124 @@ regarray fregs (/*AUTOINST*/
 		 .resetn		(resetn),
 		 .R_in			(Fp_in[31:0]), 
 		 .clk			(clk));
+*/
+
+//Register selection
+always@(*) begin
+case (rs1_sel)
+  _R0: rs1_i = r0;
+  _R1: rs1_i = r1;
+  _R2: rs1_i = r2;
+  _R3: rs1_i = r3;
+  _R4: rs1_i = r4;
+  _R5: rs1_i = r5;
+  _R6: rs1_i = r6;
+  _R7: rs1_i = r7;
+  _R8: rs1_i = r8;
+  _R9: rs1_i = r9;
+  _R10: rs1_i = r10;
+  _R11: rs1_i = r11;
+  _R12: rs1_i = r12;
+  _R13: rs1_i = r13;
+  _R14: rs1_i = r14;
+  _R15: rs1_i = r15;
+  _R16: rs1_i = r16;
+  _R17: rs1_i = r17;
+  _R18: rs1_i = r18;
+  _R19: rs1_i = r19;
+  _R20: rs1_i = r20;
+  _R21: rs1_i = r21;
+  _R22: rs1_i = r22;
+  _R23: rs1_i = r23;
+  _R24: rs1_i = r24;
+  _R25: rs1_i = r25;
+  _R26: rs1_i = r26;
+  _R27: rs1_i = r27;
+  _R28: rs1_i = r28;
+  _R29: rs1_i = r29;
+  _R30: rs1_i = r30;
+  _R31: rs1_i = r31;
+  default: rs1_i = 33'b0;
+endcase
+end
+
+//Register selection
+always@(*) begin
+case (rs2_sel)
+  _R0: rs2_i = r0;
+  _R1: rs2_i = r1;
+  _R2: rs2_i = r2;
+  _R3: rs2_i = r3;
+  _R4: rs2_i = r4;
+  _R5: rs2_i = r5;
+  _R6: rs2_i = r6;
+  _R7: rs2_i = r7;
+  _R8: rs2_i = r8;
+  _R9: rs2_i = r9;
+  _R10: rs2_i = r10;
+  _R11: rs2_i = r11;
+  _R12: rs2_i = r12;
+  _R13: rs2_i = r13;
+  _R14: rs2_i = r14;
+  _R15: rs2_i = r15;
+  _R16: rs2_i = r16;
+  _R17: rs2_i = r17;
+  _R18: rs2_i = r18;
+  _R19: rs2_i = r19;
+  _R20: rs2_i = r20;
+  _R21: rs2_i = r21;
+  _R22: rs2_i = r22;
+  _R23: rs2_i = r23;
+  _R24: rs2_i = r24;
+  _R25: rs2_i = r25;
+  _R26: rs2_i = r26;
+  _R27: rs2_i = r27;
+  _R28: rs2_i = r28;
+  _R29: rs2_i = r29;
+  _R30: rs2_i = r30;
+  _R31: rs2_i = r31;
+  default: rs2_i = 33'b0;
+endcase
+end
+
+//Register selection
+always@(*) begin
+case (rd_sel)
+  _R0: rd_i = r0;
+  _R1: rd_i = r1;
+  _R2: rd_i = r2;
+  _R3: rd_i = r3;
+  _R4: rd_i = r4;
+  _R5: rd_i = r5;
+  _R6: rd_i = r6;
+  _R7: rd_i = r7;
+  _R8: rd_i = r8;
+  _R9: rd_i = r9;
+  _R10: rd_i = r10;
+  _R11: rd_i = r11;
+  _R12: rd_i = r12;
+  _R13: rd_i = r13;
+  _R14: rd_i = r14;
+  _R15: rd_i = r15;
+  _R16: rd_i = r16;
+  _R17: rd_i = r17;
+  _R18: rd_i = r18;
+  _R19: rd_i = r19;
+  _R20: rd_i = r20;
+  _R21: rd_i = r21;
+  _R22: rd_i = r22;
+  _R23: rd_i = r23;
+  _R24: rd_i = r24;
+  _R25: rd_i = r25;
+  _R26: rd_i = r26;
+  _R27: rd_i = r27;
+  _R28: rd_i = r28;
+  _R29: rd_i = r29;
+  _R30: rd_i = r30;
+  _R31: rd_i = r31;
+  default: rd_i = 33'b0;
+endcase
+end
 
 // Dump waves
 initial begin

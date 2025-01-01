@@ -11,6 +11,7 @@ module pipeline(
 parameter XLEN = 32;
 parameter FLEN = 32;
 parameter FIELD_WIDTH = 109;
+parameter DEPTH = 16;
 
 //wire trap = 0;
 wire [XLEN-1:0] R_in;  // r0, ..., r7 register enables
@@ -143,7 +144,7 @@ pc_count reg_pc (
 );
 
 //instantiate dispatcher and send data to it
-dispatcher d0(
+dispatcher #(XLEN, DEPTH, FIELD_WIDTH) d0(
     .clk(clk),
     .resetn(resetn),
     .enq_ifq(enq_ifq),

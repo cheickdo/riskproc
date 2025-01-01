@@ -1,4 +1,4 @@
-module dispatcher #(parameter XLEN=32, parameter FIELD_WIDTH=109) (
+module dispatcher #(parameter XLEN=32, parameter DEPTH=16, parameter FIELD_WIDTH=109) (
     input clk, resetn,
     input enq_ifq,
     input deq_ifq,
@@ -26,10 +26,10 @@ reg enq_intalu, enq_fpalu, enq_agu;
 reg [XLEN-1:0] intalu_data_i, fpalu_data_i, agu_data_i;
 reg [XLEN:0] rs1_o, rs2_o, rd_o, rs1_o_d, rs2_o_d, rd_o_d;
 
-//Immediate values
+//Immediate values for 32bit instructions
 assign I_Imm = data_out_ifq[31:20];
 assign S_Imm = {data_out_ifq[31:25], data_out_ifq[11:7]};
-assign B_Imm = {data_out_ifq[31], data_out_ifq[7], data_out_ifq[30:25], data_out_ifq[11:8], 1'b0}; //NOT CORRECT
+assign B_Imm = {data_out_ifq[31], data_out_ifq[7], data_out_ifq[30:25], data_out_ifq[11:8], 1'b0}; 
 assign UJ_Imm = {data_out_ifq[31], data_out_ifq[19:12], data_out_ifq[20], data_out_ifq[30:21], 1'b0};
 assign U_Imm = {data_out_ifq[31:12]};
 
@@ -152,7 +152,7 @@ always@(posedge clk) begin
 end
 
 //instantiate issue queues and send data to them
-issue_queue int_q(
+issue_queue #(XLEN, DEPTH, FIELD_WIDTH) int_q(
     .clk(clk),
     .resetn(resetn),
     .enq(enq_intalu),

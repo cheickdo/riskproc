@@ -104,7 +104,7 @@ always@(posedge clk) begin
             2'b10: begin
                 //enqueue
                 if (!full) begin
-                    queue[addr_in] <= {4'b0, data_in[31:0], 1'b1, rs1_i[31:0], ~rs1_valid, rs2_i[31:0], ~rs2_valid, 5'b0, 1'b0};
+                    queue[addr_in] <= {addr_in, data_in[31:0], 1'b1, rs1_i[31:0], ~rs1_valid, rs2_i[31:0], ~rs2_valid, 5'b0, 1'b0};
                     //queue[addr_in] <= {50{1'b1}};
                     count <= count + 1;
                 end

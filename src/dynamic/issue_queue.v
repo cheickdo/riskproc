@@ -1,23 +1,27 @@
-module issue_queue #(parameter DATA_WIDTH=32, parameter DEPTH=16, parameter FIELD_WIDTH=55) (
+module issue_queue #(parameter DATA_WIDTH=32, parameter DEPTH=16, parameter FIELD_WIDTH=109) (
     input clk, resetn,
     input enq, deq,
     input ready_i,
     input [32:0] rs1_i, rs2_i, rd_i,
     input [DATA_WIDTH-1:0] data_in,
+    input [ID_WIDTH-1:0] cdb_tag,
+    input [DATA_WIDTH-1:0] cdb_data,
     output reg [FIELD_WIDTH-1:0] data_out,
     output reg data_out_valid,
     output full, empty
 );
 
+parameter ID_WIDTH = $clog2(DEPTH);
+
 /*
 
 Allocation of queue
-[54:51]: ID
-[50:19]: Instruction
-[18]: Allocation bit
-[17:13]: operand1
-[12]: operand1 ready
-[11:7]: operand2
+[108:105]: ID
+[104:73]: Instruction
+[72]: Allocation bit
+[71:40]: operand1
+[39]: operand1 ready
+[38:7]: operand2
 [6]: operand2 ready
 [5:1]: destination
 [0]: destination ready? <= not used or needed, should be tagged with dependant ID
@@ -27,9 +31,10 @@ Allocation of queue
 //array including instruction and tags
 reg [FIELD_WIDTH-1:0] queue [DEPTH];
 reg [DEPTH-1:0] allocation, operand1_ready, operand2_ready, destination_ready;
-reg [$clog2(DEPTH)-1:0] addr_in, addr_out;
+reg [ID_WIDTH-1:0] addr_in, addr_out;
 reg [FIELD_WIDTH-1:0] test;
-reg [$clog2(DEPTH)-1:0] count;
+reg [DATA_WIDTH-1:0] data_test;
+reg [ID_WIDTH-1:0] count;
 
 wire any_ready;
 wire rs1_valid, rs2_valid;
@@ -38,11 +43,11 @@ assign any_ready = |(operand1_ready & operand2_ready);
 assign rs1_valid = rs1_i[32];
 assign rs2_valid = rs2_i[32];
 
-//bit 18 of the queue is the allocation bit
+//bit 72 of the queue is the allocation bit
 always@(*) begin
     for (int i=0; i<DEPTH; i=i+1) begin
-        allocation[i] = queue[i][18];
-        operand1_ready[i] = queue[i][12];
+        allocation[i] = queue[i][72];
+        operand1_ready[i] = queue[i][39];
         operand2_ready[i] = queue[i][6];
     end
 end
@@ -57,7 +62,8 @@ always@(*) begin
     end
     
     //test to check if the priority encoder is working
-    test = queue[addr_in];
+    //test = queue[addr_in];
+    //data_test = queue[addr_in][104:73];
 end
 endgenerate
 
@@ -98,7 +104,8 @@ always@(posedge clk) begin
             2'b10: begin
                 //enqueue
                 if (!full) begin
-                    queue[addr_in] <= {4'b0, data_in, 1'b1, 5'b0, ~rs1_valid, 5'b0, ~rs2_valid, 5'b0, 1'b0};
+                    queue[addr_in] <= {4'b0, data_in[31:0], 1'b1, rs1_i[31:0], ~rs1_valid, rs2_i[31:0], ~rs2_valid, 5'b0, 1'b0};
+                    //queue[addr_in] <= {50{1'b1}};
                     count <= count + 1;
                 end
             end

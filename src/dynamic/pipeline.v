@@ -10,7 +10,7 @@ module pipeline(
 
 parameter XLEN = 32;
 parameter FLEN = 32;
-parameter FIELD_WIDTH = 55;
+parameter FIELD_WIDTH = 109;
 
 //wire trap = 0;
 wire [XLEN-1:0] R_in;  // r0, ..., r7 register enables
@@ -29,6 +29,18 @@ wire [4:0] rs1_sel, rs2_sel, rd_sel;
 reg [XLEN:0] rs1_i, rs2_i, rd_i;
 
 wire [FIELD_WIDTH-1:0] intalu_data_o, fpalu_data_o, agu_data_o;
+wire [31:0] Instruction;
+wire [FIELD_WIDTH-1:0] intalu_data_op;
+wire alu_data_out_valid, fpalu_data_out_valid, agu_data_out_valid;
+
+wire [6:0] alu_opcode;
+wire [5:0] alu_funct3;
+wire [6:0] alu_funct7;
+wire [XLEN-1] alu_BusWires1, alu_BusWires2;
+wire [6:0] alu_Imm_funct; 
+wire [4:0] alu_reduced_Imm;
+wire [31:0] alu_Sum;
+wire alu_Sum_valid;
 
 //reg wires
 wire [XLEN:0] r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11,
@@ -49,6 +61,15 @@ parameter _R0 = 5'b00000, _R1 = 5'b00001, _R2 = 5'b00010, _R3 = 5'b00011, _R4 = 
         _R17 = 5'b10001,  _R18 = 5'b10010,  _R19 = 5'b10011,  _R20 = 5'b10100,  _R21 = 5'b10101,
           _R22 = 5'b10110,  _R23 = 5'b10111,  _R24 = 5'b11000,  _R25 = 5'b11001,  _R26 = 5'b11010,
           _R27 = 5'b11011,  _R28 = 5'b11100,  _R29 = 5'b11101,  _R30 = 5'b11110,  _R31 = 5'b11111;
+
+//parse out data from dispatcher to alu
+assign alu_opcode = intalu_data_o[78:73];
+assign alu_funct3 = intalu_data_o[81:79];
+assign alu_funct7 = intalu_data_o[104:98];
+assign alu_BusWires1 = intalu_data_o[71:40];
+assign alu_BusWires2 = intalu_data_o[38:7];
+assign alu_Imm_funct = alu_funct7;
+assign alu_reduced_Imm = intalu_data_o[97:93];
 
 // Control FSM flip-flops
 // State Register
@@ -142,12 +163,31 @@ dispatcher d0(
     .rs1_sel(rs1_sel),
     .rs2_sel(rs2_sel),
     .rd_sel(rd_sel),
+    .alu_data_out_valid(alu_data_out_valid),
+    .fpalu_data_out_valid(fpalu_data_out_valid),
+    .agu_data_out_valid(agu_data_out_valid),
     .intalu_data_o(intalu_data_o),
     .fpalu_data_o(fpalu_data_o),
     .agu_data_o(agu_data_o)
 );
 
 //instantiate functional units and send data to them
+
+alu alu0 (
+    .clk(clk),
+    .resetn(resetn),
+    .data_out_valid(alu_data_out_valid),
+    .opcode(alu_opcode),
+    .funct3(alu_funct3),
+    .funct7(alu_funct7),
+    .BusWires1(alu_BusWires1),
+    .BusWires2(alu_BusWires2),
+    .Imm_funct(alu_Imm_funct),
+    .reduced_Imm(alu_reduced_Imm),
+    .Sum(alu_Sum),
+    .Sum_valid(alu_Sum_valid)
+);
+
 
 //instantiate writeback unit and send data to it
 

@@ -37,35 +37,35 @@ module regarray #(parameter XLEN=32) (
   output  [XLEN:0] r31
 );
 
-regn reg_0 (
-  .D(0),
+regn #(33) reg_0 (
+  .D(33'b0),
   .resetn(resetn),
   .En(1'b1),
   .clk(clk),
   .Q(r0)
 );
-regn reg_1 (
+regn #(33) reg_1 (
   .D(G),
   .resetn(resetn),
   .En(R_in[1]),
   .clk(clk),
   .Q(r1)
 );
-regn reg_2 (
+regn #(33) reg_2 (
   .D(G),
   .resetn(resetn),
   .En(R_in[2]),
   .clk(clk),
   .Q(r2)
 );
-regn reg_3 (
+regn #(33) reg_3 (
   .D(G),
   .resetn(resetn),
   .En(R_in[3]),
   .clk(clk),
   .Q(r3)
 );
-regn reg_4 (
+regn #(33) reg_4 (
   .D(G),
   .resetn(resetn),
   .En(R_in[4]),
@@ -73,7 +73,7 @@ regn reg_4 (
   .Q(r4)
 );
 
-regn reg_5 (
+regn #(33) reg_5 (
   .D(G),
   .resetn(resetn),
   .En(R_in[5]),
@@ -81,7 +81,7 @@ regn reg_5 (
   .Q(r5)
 );
 
-regn reg_6 (
+regn #(33) reg_6 (
   .D(G),
   .resetn(resetn),
   .En(R_in[6]),
@@ -89,7 +89,7 @@ regn reg_6 (
   .Q(r6)
 );
 
-regn reg_7 (
+regn #(33) reg_7 (
   .D(G),
   .resetn(resetn),
   .En(R_in[7]),
@@ -97,7 +97,7 @@ regn reg_7 (
   .Q(r7)
 );
 
-regn reg_8 (
+regn #(33) reg_8 (
   .D(G),
   .resetn(resetn),
   .En(R_in[8]),
@@ -105,7 +105,7 @@ regn reg_8 (
   .Q(r8)
 );
 
-regn reg_9 (
+regn #(33) reg_9 (
   .D(G),
   .resetn(resetn),
   .En(R_in[9]),
@@ -113,7 +113,7 @@ regn reg_9 (
   .Q(r9)
 );
 
-regn reg_10 (
+regn #(33) reg_10 (
   .D(G),
   .resetn(resetn),
   .En(R_in[10]),
@@ -121,7 +121,7 @@ regn reg_10 (
   .Q(r10)
 );
 
-regn reg_11 (
+regn #(33) reg_11 (
   .D(G),
   .resetn(resetn),
   .En(R_in[11]),
@@ -129,7 +129,7 @@ regn reg_11 (
   .Q(r11)
 );
 
-regn reg_12 (
+regn #(33) reg_12 (
   .D(G),
   .resetn(resetn),
   .En(R_in[12]),
@@ -137,7 +137,7 @@ regn reg_12 (
   .Q(r12)
 );
 
-regn reg_13 (
+regn #(33) reg_13 (
   .D(G),
   .resetn(resetn),
   .En(R_in[13]),
@@ -145,7 +145,7 @@ regn reg_13 (
   .Q(r13)
 );
 
-regn reg_14 (
+regn #(33) reg_14 (
   .D(G),
   .resetn(resetn),
   .En(R_in[14]),
@@ -153,7 +153,7 @@ regn reg_14 (
   .Q(r14)
 );
 
-regn reg_15 (
+regn #(33) reg_15 (
   .D(G),
   .resetn(resetn),
   .En(R_in[15]),
@@ -161,7 +161,7 @@ regn reg_15 (
   .Q(r15)
 );
 
-regn reg_16 (
+regn #(33) reg_16 (
   .D(G),
   .resetn(resetn),
   .En(R_in[16]),
@@ -169,7 +169,7 @@ regn reg_16 (
   .Q(r16)
 );
 
-regn reg_17 (
+regn #(33) reg_17 (
   .D(G),
   .resetn(resetn),
   .En(R_in[17]),
@@ -177,7 +177,7 @@ regn reg_17 (
   .Q(r17)
 );
 
-regn reg_18 (
+regn #(33) reg_18 (
   .D(G),
   .resetn(resetn),
   .En(R_in[18]),
@@ -185,7 +185,7 @@ regn reg_18 (
   .Q(r18)
 );
 
-regn reg_19 (
+regn #(33) reg_19 (
   .D(G),
   .resetn(resetn),
   .En(R_in[19]),
@@ -193,7 +193,7 @@ regn reg_19 (
   .Q(r19)
 );
 
-regn reg_20 (
+regn #(33) reg_20 (
   .D(G),
   .resetn(resetn),
   .En(R_in[20]),
@@ -201,7 +201,7 @@ regn reg_20 (
   .Q(r20)
 );
 
-regn reg_21 (
+regn #(33) reg_21 (
   .D(G),
   .resetn(resetn),
   .En(R_in[21]),
@@ -209,7 +209,7 @@ regn reg_21 (
   .Q(r21)
 );
 
-regn reg_22 (
+regn #(33) reg_22 (
   .D(G),
   .resetn(resetn),
   .En(R_in[22]),
@@ -217,7 +217,7 @@ regn reg_22 (
   .Q(r22)
 );
 
-regn reg_23 (
+regn #(33) reg_23 (
   .D(G),
   .resetn(resetn),
   .En(R_in[23]),
@@ -225,7 +225,7 @@ regn reg_23 (
   .Q(r23)
 );
 
-regn reg_24 (
+regn #(33) reg_24 (
   .D(G),
   .resetn(resetn),
   .En(R_in[24]),
@@ -233,7 +233,7 @@ regn reg_24 (
   .Q(r24)
 );
 
-regn reg_25 (
+regn #(33) reg_25 (
   .D(G),
   .resetn(resetn),
   .En(R_in[25]),
@@ -241,7 +241,7 @@ regn reg_25 (
   .Q(r25)
 );
 
-regn reg_26 (
+regn #(33) reg_26 (
   .D(G),
   .resetn(resetn),
   .En(R_in[26]),
@@ -249,7 +249,7 @@ regn reg_26 (
   .Q(r26)
 );
 
-regn reg_27 (
+regn #(33) reg_27 (
   .D(G),
   .resetn(resetn),
   .En(R_in[27]),
@@ -257,7 +257,7 @@ regn reg_27 (
   .Q(r27)
 );
 
-regn reg_28 (
+regn #(33) reg_28 (
   .D(G),
   .resetn(resetn),
   .En(R_in[28]),
@@ -265,7 +265,7 @@ regn reg_28 (
   .Q(r28)
 );
 
-regn reg_29 (
+regn #(33) reg_29 (
   .D(G),
   .resetn(resetn),
   .En(R_in[29]),
@@ -273,7 +273,7 @@ regn reg_29 (
   .Q(r29)
 );
 
-regn reg_30 (
+regn #(33) reg_30 (
   .D(G),
   .resetn(resetn),
   .En(R_in[30]),
@@ -281,7 +281,7 @@ regn reg_30 (
   .Q(r30)
 );
 
-regn reg_31 (
+regn #(33) reg_31 (
   .D(G),
   .resetn(resetn),
   .En(R_in[31]),

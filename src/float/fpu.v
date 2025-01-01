@@ -1,7 +1,6 @@
 module fpu(
     input clk,
     input resetn,
-	input [5:0] operation,
 	input [31:0] rs1,
 	input [31:0] rs2,
     input [31:0] rs3,
@@ -9,6 +8,274 @@ module fpu(
     output reg [4:0] fflags,
 	output reg [31:0] result
 );
+
+//control signals
+reg rs2_in, rd_in, frd_in, IR_in, ADDR_in, Done, dout_in, 
+  load, store, din_in, G_in,F_in, AddSub, Arith, zero_extend, branch,
+    mul_arith, ret, sys_clear, multicycle, count_rst, count_en, u_op, u2_op;
+
+wire [31:0] fstage;
+
+reg [1:0] Tstep_Q, Tstep_D;
+reg valid_en;
+
+always @(posedge clk)
+  if (!resetn) Tstep_Q <= exec;
+  else Tstep_Q <= Tstep_D;
+
+//Valid mux
+always@(posedge clk) begin
+  if (!resetn) begin
+    Sum_valid = 1'b0;
+  end
+  else if (data_out_valid & valid_en) begin
+    Sum_valid = 1'b1;
+  end
+  else begin
+    Sum_valid = 1'b0;
+  end
+end
+
+// Control FSM state table (Next State Logic). TODO move it to seperate module?
+// Is a function of current state (Tstep_Q) and inputs (run and Done)
+always @(*)
+  case (Tstep_Q)
+    exec: begin
+      if (multicycle) Tstep_D = fexec;
+      else Tstep_D = access;
+    end
+    fexec: begin
+      if (~multicycle) Tstep_D = access;
+      else Tstep_D = fexec;
+    end
+    default: ;
+  endcase
+
+//multicycle counter
+counter fstage0 (
+  .clk(clk),
+  .resetn(resetn & ~count_rst),
+  .enable(count_en),
+  .out(fstage)
+);
+
+//Control logic
+always@(*) begin
+    multicycle = 1'b0;
+    count_rst = 1'b0;
+    count_en = 1'b0;
+    valid_en = 1'b0;
+    operation = 0;
+
+    case (Tstep_Q)
+        exec:
+            case (opcode)
+            F_type: begin 
+                case (funct7)
+                7'b0001000: begin //fmul
+                    operation = 2;
+                    multicycle = 1'b1;
+                    count_rst = 1'b1;
+                end
+                7'b0001100: begin //fdiv
+                    operation = 3;
+                    multicycle = 1'b1;
+                    count_rst = 1'b1;
+                end
+                7'b0101100: begin //fsqrt
+                    operation = 17;
+                    multicycle = 1'b1;
+                    count_rst = 1'b1;
+                end
+                7'b0000000: begin //floating point add instruction
+                    operation = 0;
+                    multicycle = 1'b1;
+                    count_rst = 1'b1;
+                end
+                7'b0000100: begin //floating point sub instruction
+                    operation = 1;
+                    multicycle = 1'b1;
+                    count_rst = 1'b1;
+                end
+                7'b1010000: begin
+                    valid_en = 1'b1;
+                    if (funct3 == 1) operation = 14; //flt
+                    if (funct3 == 0) operation = 15; //fle
+                    if (funct3 == 2) operation = 16; //feq
+                end
+                7'b0010000: begin
+                    valid_en = 1'b1;
+                    if (funct3 == 0) operation = 11; //fsgnj.s
+                    if (funct3 == 1) operation = 12; //fsgnjn.s
+                    if (funct3 == 2) operation = 13; //fsgnjx.s
+                end
+                7'b0010100: begin
+                    valid_en = 1'b1;
+                    if (funct3 == 0) operation = 9; //fmin
+                    if (funct3 == 1) operation = 10; //fmax
+                end
+                7'b1101000: begin //convert integer to float
+                    valid_en = 1'b1;
+                    if (rs2 == 5'b00000) operation = 4;
+                    if (rs2 == 5'b00001) operation = 5;          
+
+                end
+                7'b1111000: begin //move integer to float
+                    valid_en = 1'b1;
+                    //TODO introduce some bypass
+                end
+                7'b1110000: begin 
+                    valid_en = 1'b1;
+                    if (funct3 == 3'b001) operation = 8; //fclass
+                    if (rs2 == 5'b00000) begin //move float to integer
+                        //introduce some bypass logic
+                    end
+                end
+                7'b1100000: begin //fcvt.w.s TODO
+                    valid_en = 1'b1;
+                    if (rs2 == 5'b00000) operation = 6;
+                    if (rs2 == 5'b00001) operation = 7;
+                end
+                default: ;
+                endcase
+            end
+
+            //TODO work on FM instructions after adding new issue queue with 3 operands for floats
+            FMADD_type: begin
+                operation = 18;
+                multicycle = 1'b1;
+                count_rst = 1'b1;
+            end
+
+            FMSUB_type: begin
+                operation = 19;
+                multicycle = 1'b1;
+                count_rst = 1'b1;
+            end
+
+            FNMADD_type: begin
+                operation = 20;
+                multicycle = 1'b1;
+                count_rst = 1'b1;
+            end
+
+            FNMSUB_type: begin
+                operation = 21;
+                multicycle = 1'b1;
+                count_rst = 1'b1;
+            end
+
+            default: ;
+            endcase
+        fexec: //multicycle floating point instructions
+            case(opcode)
+                F_type:  
+                case (funct7)
+                    7'b0000000: begin //floating point add instruction
+                        operation = 0;
+                        if (fstage[4:0] == 2) begin 
+                            multicycle = 1'b0; 
+                            valid_en = 1'b1; 
+                        end
+                        else multicycle = 1'b1;
+                        count_en = 1'b1;
+                    end
+                    7'b0000100: begin //floating point add instruction
+                        operation = 1;
+                        if (fstage[4:0] == 2) begin 
+                            multicycle = 1'b0; 
+                            valid_en = 1'b1; 
+                            end
+                        else multicycle = 1'b1;
+                        count_en = 1'b1;
+                    end
+                    7'b0001000: begin //fmul
+                        operation = 2;
+                        if (fstage[4:0] == 2) 
+                        begin 
+                            multicycle = 1'b0; 
+                            valid_en = 1'b1; 
+                        end
+                        else 
+                        multicycle = 1'b1;
+                        count_en = 1'b1;
+                    end
+                    7'b0001100: begin //fdiv
+                        operation = 3;
+                        if (fstage[4:0] == 26) 
+                        begin 
+                            multicycle = 1'b0; 
+                            valid_en = 1'b1; 
+                        end
+                        else 
+                        multicycle = 1'b1;
+                        count_en = 1'b1;
+                    end
+                    7'b0101100: begin //fsqrt
+                        operation = 17;
+                        if (fstage[4:0] == 26) 
+                        begin 
+                            multicycle = 1'b0; 
+                            valid_en = 1'b1; 
+                        end
+                        else 
+                        multicycle = 1'b1;
+                        count_en = 1'b1;
+                    end
+                    default: ;
+                endcase
+
+                //TODO work on FM instructions after adding new issue queue with 3 operands for floats
+                FMADD_type: begin //floating point add instruction
+                    operation = 18;
+                    if (fstage[4:0] == 5) 
+                    begin 
+                        multicycle = 1'b0; 
+                        valid_en = 1'b1; 
+                    end
+                    else 
+                    multicycle = 1'b1;
+                    count_en = 1'b1;
+                end
+
+                FMSUB_type: begin //floating point add instruction
+                    operation = 19;
+                    if (fstage[4:0] == 5) 
+                    begin 
+                        multicycle = 1'b0; 
+                        valid_en = 1'b1; 
+                    end
+                    else 
+                    multicycle = 1'b1;
+                    count_en = 1'b1;
+                end
+
+                FNMADD_type: begin //floating point add instruction
+                    operation = 20;
+                    if (fstage[4:0] == 5) 
+                    begin 
+                        multicycle = 1'b0; 
+                        valid_en = 1'b1; 
+                    end
+                    else multicycle = 1'b1;
+                    count_en = 1'b1;
+                end
+
+                FNMSUB_type: begin //floating point add instruction
+                    operation = 21;
+                    if (fstage[4:0] == 5) 
+                    begin 
+                        multicycle = 1'b0; 
+                        valid_en = 1'b1; 
+                    end
+                    else multicycle = 1'b1;
+                    count_en = 1'b1;
+                end
+                default: ;
+            endcase
+        default: ;
+    endcase
+end
 
 parameter FLEN = 32;
 

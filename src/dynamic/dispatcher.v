@@ -6,12 +6,18 @@ module dispatcher #(parameter XLEN=32, parameter DEPTH=16, parameter FIELD_WIDTH
     input full_intalu, full_fpalu, full_agu,
     input alu_ready_i, fpalu_ready_i, agu_ready_i,
     input [XLEN:0] rs1_i, rs2_i, rd_i,
+    input [ID_WIDTH-1:0] r_tag,
+    input [XLEN-1:0] cdb_data,
+    input [ID_WIDTH-1:0] cdb_tag,
+    input cdb_valid,
     output full_ifq, empty_ifq,
-    output [4:0] rs1_sel, rs2_sel, rd_sel,
+    output [4:0] rs1_sel, rs2_sel, rd_sel, rd_num_o,
     output [XLEN:0] BusWires1, BusWires2,
     output alu_data_out_valid, fpalu_data_out_valid, agu_data_out_valid,
     output [FIELD_WIDTH-1:0] intalu_data_o, fpalu_data_o, agu_data_o
 );
+
+parameter ID_WIDTH = $clog2(DEPTH);
 
 wire [6:0] opcode;
 wire [XLEN-1:0] data_out_ifq;
@@ -19,12 +25,13 @@ wire [11:0] I_Imm, S_Imm;
 wire [12:0] B_Imm;
 //wire [9:0] J_Imm; //Not sure if this width is correct
 wire [20:0] UJ_Imm;
-wire [19:0] U_Imm; 
+wire [19:0] U_Imm;
 
 reg [1:0] queue_sel;
 reg enq_intalu, enq_fpalu, enq_agu;
 reg [XLEN-1:0] intalu_data_i, fpalu_data_i, agu_data_i;
 reg [XLEN:0] rs1_o, rs2_o, rd_o, rs1_o_d, rs2_o_d, rd_o_d;
+reg [4:0] rd_sel_o;
 
 //Immediate values for 32bit instructions
 assign I_Imm = data_out_ifq[31:20];
@@ -32,7 +39,6 @@ assign S_Imm = {data_out_ifq[31:25], data_out_ifq[11:7]};
 assign B_Imm = {data_out_ifq[31], data_out_ifq[7], data_out_ifq[30:25], data_out_ifq[11:8], 1'b0}; 
 assign UJ_Imm = {data_out_ifq[31], data_out_ifq[19:12], data_out_ifq[20], data_out_ifq[30:21], 1'b0};
 assign U_Imm = {data_out_ifq[31:12]};
-
 
 //opcode types
 parameter R_type = 7'b0110011, I_type_1=7'b0000011, I_type_2 = 7'b0010011;
@@ -116,29 +122,39 @@ always@(posedge clk) begin
                     enq_fpalu <= 0;
                     enq_agu <= 0;
                     intalu_data_i <= data_out_ifq;
-                    rs1_o_d <= rs1_o;
-                    rs2_o_d <= rs2_o;
+                    rd_sel_o <= rd_sel;
+                    if (rs1_o[XLEN] == 1'b1) rs1_o_d <= {1'b1, 26'b0, r_tag};
+                    else rs1_o_d <= rs1_o;
+                    if (rs2_o[XLEN] == 1'b1) rs2_o_d <= {1'b1, 26'b0, r_tag};
+                    else rs2_o_d <= rs2_o;
                 end
                 FPALU: begin
                     enq_fpalu <= 1;
                     enq_intalu <= 0;
                     enq_agu <= 0;
                     fpalu_data_i <= data_out_ifq;
-                    rs1_o_d <= rs1_o;
-                    rs2_o_d <= rs2_o;
+                    rd_sel_o <= rd_sel;
+                    if (rs1_o[XLEN] == 1'b1) rs1_o_d <= {1'b1, 26'b0, r_tag};
+                    else rs1_o_d <= rs1_o;
+                    if (rs2_o[XLEN] == 1'b1) rs2_o_d <= {1'b1, 26'b0, r_tag};
+                    else rs2_o_d <= rs2_o;
                 end
                 AGU: begin
                     enq_agu <= 1;
                     enq_intalu <= 0;
                     enq_fpalu <= 0;
                     agu_data_i <= data_out_ifq;
-                    rs1_o_d <= rs1_o;
-                    rs2_o_d <= rs2_o;
+                    rd_sel_o <= rd_sel;
+                    if (rs1_o[XLEN] == 1'b1) rs1_o_d <= {1'b1, 26'b0, r_tag};
+                    else rs1_o_d <= rs1_o;
+                    if (rs2_o[XLEN] == 1'b1) rs2_o_d <= {1'b1, 26'b0, r_tag};
+                    else rs2_o_d <= rs2_o;
                 end
                 default: begin
                     enq_intalu <= 0;
                     enq_fpalu <= 0;
                     enq_agu <= 0;
+                    rd_sel_o <= 0;
                 end
             endcase
             //deq_ifq <= 1;
@@ -147,6 +163,7 @@ always@(posedge clk) begin
             enq_intalu <= 0;
             enq_fpalu <= 0;
             enq_agu <= 0;
+            rd_sel_o <= 0;
         end
     end
 end
@@ -163,6 +180,10 @@ issue_queue #(XLEN, DEPTH, FIELD_WIDTH) int_q(
     .rs1_i(rs1_o_d),
     .rs2_i(rs2_o_d),
     .rd_i(rd_o),
+    .rd_num_i(rd_sel_o),
+    .cdb_tag(cdb_tag),
+    .cdb_data(cdb_data),
+    .cdb_valid(cdb_valid),
     .data_out_valid(alu_data_out_valid),
     .full(),
     .empty()

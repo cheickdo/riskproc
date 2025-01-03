@@ -2,10 +2,12 @@ module issue_queue #(parameter DATA_WIDTH=32, parameter DEPTH=16, parameter FIEL
     input clk, resetn,
     input enq, deq,
     input ready_i,
-    input [32:0] rs1_i, rs2_i, rd_i,
+    input [DATA_WIDTH:0] rs1_i, rs2_i, rd_i,
+    input [4:0] rd_num_i, 
     input [DATA_WIDTH-1:0] data_in,
     input [ID_WIDTH-1:0] cdb_tag,
     input [DATA_WIDTH-1:0] cdb_data,
+    input cdb_valid,
     output reg [FIELD_WIDTH-1:0] data_out,
     output reg data_out_valid,
     output full, empty
@@ -23,7 +25,7 @@ Allocation of queue
 [39]: operand1 ready
 [38:7]: operand2
 [6]: operand2 ready
-[5:1]: destination
+[5:1]: destination register number
 [0]: destination ready? <= not used or needed, should be tagged with dependant ID
 
 */
@@ -88,6 +90,19 @@ always@(posedge clk) begin
         end
         count <= 0;
     end
+    else if (cdb_valid) begin
+        for (int i=0; i<DEPTH; i=i+1) begin
+            if (queue[i][39] == 1'b0) begin //if operant not ready value in cdb will be the register number
+                queue[i] <= {queue[i][108:73], 1'b0, queue[i][71:40], 1'b1, queue[i][38:7], 1'b1, queue[i][5:1], 1'b1};
+            end
+        end
+
+        for (int i=0; i<DEPTH; i=i+1) begin
+            if (queue[i][5:1] == cdb_tag) begin
+                queue[i] <= {queue[i][108:73], 1'b0, queue[i][71:40], 1'b1, queue[i][38:7], 1'b1, queue[i][5:1], 1'b1};
+            end
+        end
+    end
     else begin
         case({enq,deq})
             2'b00, 2'b11: begin
@@ -104,7 +119,7 @@ always@(posedge clk) begin
             2'b10: begin
                 //enqueue
                 if (!full) begin
-                    queue[addr_in] <= {addr_in, data_in[31:0], 1'b1, rs1_i[31:0], ~rs1_valid, rs2_i[31:0], ~rs2_valid, 5'b0, 1'b0};
+                    queue[addr_in] <= {addr_in, data_in[31:0], 1'b1, rs1_i[31:0], ~rs1_valid, rs2_i[31:0], ~rs2_valid, rd_num_i, 1'b0};
                     //queue[addr_in] <= {50{1'b1}};
                     count <= count + 1;
                 end

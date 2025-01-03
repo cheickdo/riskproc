@@ -13,6 +13,8 @@ parameter FLEN = 32;
 parameter FIELD_WIDTH = 109;
 parameter DEPTH = 16;
 
+parameter ID_WIDTH = $clog2(DEPTH);
+
 //wire trap = 0;
 wire [XLEN-1:0] R_in;  // r0, ..., r7 register enables
 reg [XLEN-1:0] pc;
@@ -29,10 +31,18 @@ reg [32:0] G;
 wire [4:0] rs1_sel, rs2_sel, rd_sel;
 reg [XLEN:0] rs1_i, rs2_i, rd_i;
 
+wire [XLEN-1:0] alu_cdb_data, fpalu_cdb_data, agu_cdb_data;
+wire [ID_WIDTH-1:0] alu_cdb_tag, fpalu_cdb_tag, agu_cdb_tag;
+
+reg [XLEN-1:0] cdb_data;
+reg [ID_WIDTH-1:0] cdb_tag;
+reg cdb_valid;
+
 wire [FIELD_WIDTH-1:0] intalu_data_o, fpalu_data_o, agu_data_o;
 wire [31:0] Instruction;
 wire [FIELD_WIDTH-1:0] intalu_data_op;
 wire alu_data_out_valid, fpalu_data_out_valid, agu_data_out_valid;
+wire rd_num;
 
 wire [6:0] alu_opcode;
 wire [5:0] alu_funct3;
@@ -41,12 +51,15 @@ wire [XLEN-1] alu_BusWires1, alu_BusWires2;
 wire [6:0] alu_Imm_funct; 
 wire [4:0] alu_reduced_Imm;
 wire [31:0] alu_Sum;
+wire [ID_WIDTH-1:0] alu_tag;
 wire alu_Sum_valid;
 
 //reg wires
 wire [XLEN:0] r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11,
   r12, r13, r14, r15, r16, r17, r18, r19, r20, r21, r22, r23, r24, r25, r26, r27, r28
   , r29, r30, r31;
+reg [ID_WIDTH-1:0] r_tag;
+
 
 wire [FLEN-1:0] f0, f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11,
 f12, f13, f14, f15, f16, f17, f18, f19, f20, f21, f22, f23, f24, f25, f26, f27, f28
@@ -71,6 +84,35 @@ assign alu_BusWires1 = intalu_data_o[71:40];
 assign alu_BusWires2 = intalu_data_o[38:7];
 assign alu_Imm_funct = alu_funct7;
 assign alu_reduced_Imm = intalu_data_o[97:93];
+assign alu_tag = intalu_data_o[108:105];
+assign rd_num = intalu_data_o[5:1];
+
+assign rd = rd_num; //TEMPORARY UNTIL FULL REGISTER ACCESS IS DONE
+assign rd_in = alu_data_out_valid;
+
+//Bus selections
+always@(*) begin
+  if (alu_data_out_valid) begin
+    cdb_data = alu_Sum;
+    cdb_tag = alu_tag;
+    cdb_valid = alu_Sum_valid;
+  end
+  else if (fpalu_data_out_valid) begin
+    //cdb_data = fpalu_Sum;
+    //cdb_tag = fpaalu_tag;
+    //cdb_valid = fpalu_Sum_valid;
+  end
+  else if (agu_data_out_valid) begin
+    //cdb_data = agu_Sum;
+    //cdb_tag = agu_tag;
+    //cdb_valid = agu_Sum_valid;
+  end
+  else begin
+    //cdb_data = 0;
+    //cdb_tag = 0;
+    //cdb_valid = 1'b0;
+  end
+end
 
 // Control FSM flip-flops
 // State Register
@@ -164,6 +206,9 @@ dispatcher #(XLEN, DEPTH, FIELD_WIDTH) d0(
     .rs1_sel(rs1_sel),
     .rs2_sel(rs2_sel),
     .rd_sel(rd_sel),
+    .cdb_tag(cdb_tag),
+    .cdb_data(cdb_data),
+    .cdb_valid(cdb_valid),
     .alu_data_out_valid(alu_data_out_valid),
     .fpalu_data_out_valid(fpalu_data_out_valid),
     .agu_data_out_valid(agu_data_out_valid),
@@ -174,7 +219,7 @@ dispatcher #(XLEN, DEPTH, FIELD_WIDTH) d0(
 
 //instantiate functional units and send data to them
 
-alu alu0 (
+alu #(XLEN, ID_WIDTH) alu0(
     .clk(clk),
     .resetn(resetn),
     .data_out_valid(alu_data_out_valid),
@@ -183,12 +228,12 @@ alu alu0 (
     .funct7(alu_funct7),
     .BusWires1(alu_BusWires1),
     .BusWires2(alu_BusWires2),
+    .tag(alu_tag),
     .Imm_funct(alu_Imm_funct),
     .reduced_Imm(alu_reduced_Imm),
     .Sum(alu_Sum),
     .Sum_valid(alu_Sum_valid)
 );
-
 
 //instantiate writeback unit and send data to it
 
@@ -242,7 +287,7 @@ regarray regs (/*AUTOINST*/
     .r30			(r30[XLEN:0]),
     .r31			(r31[XLEN:0]),
     // Inputs
-    .G			(G[32:0]),
+    .G			({r_tag[ID_WIDTH-1:0], G[32:0]}), // TO FIX INPUT INTO REGARRAY
     .resetn		(resetn),
     .R_in			(R_in[31:0]), 
     .clk			(clk));
